@@ -1,0 +1,1 @@
+Fixed single-file build. Upload index.html to the repo root for GitHub Pages.
