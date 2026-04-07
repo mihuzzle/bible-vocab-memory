@@ -6,47 +6,25 @@
   <title>FI ↔ EN Bible Vocab Match</title>
   <meta name="theme-color" content="#0b1220" />
   <style>
-    :root{
-      --bg:#0b1220;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --good:#34d399;
-      --bad:#fb7185;
-      --shadow:0 10px 25px rgba(0,0,0,.35);
-      --radius:16px;
-      --gap:10px;
-      --cardH:64px;
-      --cardFont:16px;
-      --fontScale:1.0;
-    }
+    :root{--bg:#0b1220;--text:#e5e7eb;--muted:#9ca3af;--good:#34d399;--bad:#fb7185;--shadow:0 10px 25px rgba(0,0,0,.35);--radius:16px;--gap:10px;--cardH:64px;--cardFont:14px;--fontScale:1.0;}
     *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
     html, body{height:100%;}
-    body{
-      margin:0;
-      overflow:hidden; /* no scrolling in game */
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:
-        radial-gradient(1200px 800px at 20% 10%, #1e3a8a33, transparent),
-        radial-gradient(1000px 700px at 80% 30%, #0ea5e933, transparent),
-        linear-gradient(180deg, var(--bg), #050814);
-      color:var(--text);
-    }
+    body{margin:0; overflow:hidden; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% 10%, #1e3a8a33, transparent), radial-gradient(1000px 700px at 80% 30%, #0ea5e933, transparent), linear-gradient(180deg,var(--bg),#050814); color:var(--text);}
+
+    body.mode-single .card .t{ -webkit-line-clamp: 3; }
+    body.mode-all .card .t{ -webkit-line-clamp: 2; }
 
     .app{height:100%; display:flex; flex-direction:column;}
-    header{
-      padding:14px 14px 10px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      background: linear-gradient(180deg, rgba(11,18,32,.95), rgba(11,18,32,.65));
-      backdrop-filter: blur(10px);
-    }
+    header{padding:14px 14px 10px; border-bottom:1px solid rgba(255,255,255,.06); background: linear-gradient(180deg, rgba(11,18,32,.95), rgba(11,18,32,.65)); backdrop-filter: blur(10px);}
     .title{font-weight:800; font-size:16px; letter-spacing:.2px; margin:0}
     .subtitle{margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.3}
-
     main{flex:1; min-height:0; padding:12px 14px 14px; display:flex; overflow:hidden;}
+
     .view{display:none; width:100%; height:100%;}
     .view.active{display:block;}
 
-    /* Setup can scroll */
+    /* Allow scrolling ONLY in setup view */
     #viewSetup.active{overflow:auto; -webkit-overflow-scrolling: touch; padding-bottom:18px;}
 
     .setupGrid{display:grid; grid-template-columns:1fr; gap:12px; max-width:720px; margin:0 auto;}
@@ -75,9 +53,8 @@
     /* slider */
     .sliderWrap{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
     input[type=range]{width: 100%; accent-color: #60a5fa;}
-    .sliderVal{min-width: 56px; text-align:right; color: var(--muted); font-size:12px;}
+    .sliderVal{min-width: 48px; text-align:right; color: var(--muted); font-size:12px;}
 
-    /* Game */
     .hud{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
     .hud .left,.hud .right{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
     .pill{background:rgba(17,24,39,.75); border:1px solid rgba(255,255,255,.10); border-radius:999px; padding:8px 10px; font-size:12px; color:var(--muted);} 
@@ -87,43 +64,27 @@
     .side{background:rgba(17,24,39,.40); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:var(--gap); display:flex; flex-direction:column; gap:var(--gap); min-height:0;} 
     .sideTitle{font-size:12px; color:var(--muted); margin:0 0 2px 2px}
 
-    /* Grid columns depend on mode (single=1, all=2) */
-    body.mode-single .grid{grid-template-columns:repeat(1,minmax(0,1fr));}
-    body.mode-all .grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-
-    .grid{flex:1; min-height:0; display:grid; grid-auto-rows:var(--cardH); gap:var(--gap); align-content:start;}
+    .grid{flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:var(--cardH); gap:var(--gap); align-content:start;}
 
     .card{border-radius:var(--radius); background:rgba(15,23,42,.92); border:1px solid rgba(255,255,255,.10); box-shadow:0 6px 18px rgba(0,0,0,.20); padding:10px; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; user-select:none; overflow:hidden; transition: transform .18s ease, opacity .18s ease, border-color .18s ease, background .18s ease;}
     .card:active{transform:scale(.985);} 
-
-    /* Text rendering: no ellipsis; JS will set line breaks and font sizes */
-    .card .t{
-      font-size: calc(var(--cardFont) * var(--fontScale));
-      font-weight:900;
-      line-height:1.12;
-      white-space: pre-line; /* allow \n from JS */
-      word-break: normal; 
-      overflow-wrap: normal;
-      hyphens: manual;
-      width:100%;
-    }
-
-    /* For single-word mode we force one-line (JS will fit font to width) */
-    body.mode-single .card .t{ white-space: nowrap; }
-
+    .card .t{font-size: calc(var(--cardFont) * var(--fontScale)); font-weight:900; line-height:1.12; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; word-break:break-word;}
     .card.selected{outline:3px solid rgba(96,165,250,.50); border-color:rgba(96,165,250,.55);} 
     .card.good{outline:3px solid rgba(52,211,153,.55); border-color:rgba(52,211,153,.55); background:rgba(52,211,153,.12);} 
     .card.bad{outline:3px solid rgba(251,113,133,.55); border-color:rgba(251,113,133,.60); background:rgba(251,113,133,.10);} 
     .card.removing{opacity:0; transform:scale(.96);} 
 
-    /* Results */
+    .overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:18px; z-index:50;}
+    .overlay.show{display:flex;}
+    .overlayCard{max-width:780px; width:100%; background:rgba(17,24,39,.96); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:14px; box-shadow:var(--shadow);} 
+    .overlayCard .big{font-weight:900; font-size:16px; line-height:1.35}
+    .overlayCard .small{color:var(--muted); font-size:12px; margin-top:8px}
+
     .resultsWrap{max-width:720px; margin:0 auto;}
     .bigNum{font-size:34px; font-weight:1000; margin:6px 0 0;}
 
     .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:14px; background:rgba(17,24,39,.95); color:var(--text); border:1px solid rgba(255,255,255,.10); padding:10px 12px; border-radius:14px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:99; max-width:92vw; text-align:center; font-size:13px;}
     .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);} 
-
-    @media (max-width:420px){:root{--gap:8px;} header{padding:12px 12px 8px;} main{padding:10px 12px 12px;} .stat{min-width:120px;}}
   </style>
 </head>
 <body class="mode-single">
@@ -159,7 +120,7 @@
             <input id="rngText" type="range" min="85" max="125" step="5" value="100" />
             <div class="sliderVal" id="txtVal">100%</div>
           </div>
-          <div class="note" style="margin-top:6px">No hidden text: words are always fully visible on the cards.</div>
+          <div class="note" style="margin-top:6px">Tip: Double‑tap a card during play to see the full text.</div>
 
           <div style="height:10px"></div>
           <label>Content</label>
@@ -232,6 +193,13 @@
       </div>
     </section>
   </main>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlayCard">
+      <div class="big" id="overlayText">—</div>
+      <div class="small">Tap anywhere to close</div>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
 </div>
 
@@ -240,6 +208,8 @@
 (() => {
   const $ = (id)=>document.getElementById(id);
   const toastEl = $('toast');
+  const overlayEl = $('overlay');
+  const overlayText = $('overlayText');
   const views = {setup:$('viewSetup'), game:$('viewGame'), results:$('viewResults')};
   const showView = (name)=>{ Object.values(views).forEach(v=>v.classList.remove('active')); views[name].classList.add('active'); };
   const toast = (msg)=>{ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'), 1600); };
@@ -253,7 +223,9 @@
   const session = {active:false, paused:false, settingsKey:'', deck:[], pos:0, rounds:0, points:0};
   const round = {k:8, startTs:null, timer:null, matched:0, mistakes:0, lock:false, selected:null, cardsL:[], cardsR:[], mapByCardId:new Map(), domByCardId:new Map()};
 
-  // Category dropdown
+  // Close overlay on any tap
+  overlayEl.addEventListener('click', ()=>overlayEl.classList.remove('show'));
+
   const selCat = $('selCategory');
   (function fillCategories(){
     selCat.innerHTML='';
@@ -261,23 +233,16 @@
     categories.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; selCat.appendChild(o); });
   })();
 
-  // Segment helpers
   const setSeg=(id,val)=>{ const el=$(id); [...el.querySelectorAll('button')].forEach(b=>b.classList.toggle('on', b.dataset.value===val)); };
   const bindSeg=(id,cb)=>{ const el=$(id); el.addEventListener('click',(e)=>{ const b=e.target.closest('button'); if(!b) return; [...el.querySelectorAll('button')].forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(b.dataset.value); }); };
 
-  // Difficulty note
   function updateDiffNote(){
     const d = diffs[settings.difficulty];
     $('diffNote').textContent = `${d.label}: ${d.sec_per_pair.toFixed(1)}s per pair`;
   }
 
   bindSeg('segDifficulty', v=>{ settings.difficulty=v; updateDiffNote(); });
-  bindSeg('segContent', v=>{
-    settings.contentMode=v;
-    document.body.classList.toggle('mode-single', v==='single');
-    document.body.classList.toggle('mode-all', v!=='single');
-    onSettingsChanged(true);
-  });
+  bindSeg('segContent', v=>{ settings.contentMode=v; document.body.classList.toggle('mode-single', v==='single'); document.body.classList.toggle('mode-all', v!=='single'); onSettingsChanged(true); });
   bindSeg('segSound', v=>{ settings.sound=(v==='on'); });
   bindSeg('segHaptics', v=>{ settings.haptics=(v==='on'); });
 
@@ -290,10 +255,6 @@
   function applyFontScale(){
     document.documentElement.style.setProperty('--fontScale', String(settings.fontScale));
     txtVal.textContent = Math.round(settings.fontScale*100) + '%';
-    // Refit current visible cards
-    if(views.game.classList.contains('active')){
-      refitAllVisibleCards();
-    }
   }
   rngText.addEventListener('input', (e)=>{ settings.fontScale = parseInt(e.target.value,10)/100; applyFontScale(); });
 
@@ -359,8 +320,8 @@
   $('btnBackSetup').addEventListener('click', pauseToSetup);
   $('btnResultsSetup').addEventListener('click', pauseToSetup);
 
-  // Auto pair choice (base desired)
-  function choosePairsDesired(){
+  // Auto pairs
+  function choosePairs(){
     if(settings.pairsChoice!=='auto') return parseInt(settings.pairsChoice,10);
     const h=window.innerHeight||700; const isAll=(settings.contentMode==='all');
     if(!isAll && h>=760) return 10;
@@ -371,81 +332,41 @@
 
   const formatTime=(sec)=>{ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${String(s).padStart(2,'0')}`; };
 
-  // Layout sizing (no scroll)
   function computeLayout(k){
-    const colsPerSide = (settings.contentMode==='single') ? 1 : 2;
-    const rows=Math.ceil(k/colsPerSide);
+    const rows=Math.ceil(k/2);
     const gap=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'))||10;
     const headerH=document.querySelector('header').getBoundingClientRect().height;
     const hudH=document.querySelector('.hud').getBoundingClientRect().height;
     const avail=(window.innerHeight-headerH-hudH-12-14-16);
     const gridAvail=Math.max(260, avail - gap*2 - 18);
     const cardH=Math.floor((gridAvail-gap*(rows-1))/rows);
-    const clamped=Math.max(46, Math.min(110, cardH));
-    // Base font before scaling
-    const font=Math.max(12, Math.min(20, Math.floor(clamped*0.32)));
+    const clamped=Math.max(46, Math.min(98, cardH));
+    const font=Math.max(12, Math.min(18, Math.floor(clamped*0.30)));
     document.documentElement.style.setProperty('--cardH', clamped+'px');
     document.documentElement.style.setProperty('--cardFont', font+'px');
   }
 
-  // Text fitting helpers (no truncation)
-  const measurer = document.createElement('canvas').getContext('2d');
-  function measureTextPx(text, fontPx, fontFamily){
-    measurer.font = `${fontPx}px ${fontFamily}`;
-    return measurer.measureText(text).width;
-  }
-
-  function fitSingleWord(el, text){
-    // Fit word on one line inside available width
-    const fontFamily = getComputedStyle(el).fontFamily || 'system-ui';
-    const paddingX = 18; // approximate
-    const maxW = el.clientWidth - paddingX;
-    const base = parseFloat(getComputedStyle(el).fontSize);
-    const scaledBase = base; // already includes --fontScale
-    let fontPx = scaledBase;
-    const minPx = Math.max(10, scaledBase * 0.65);
-
-    while(fontPx > minPx){
-      const w = measureTextPx(text, fontPx, fontFamily);
-      if(w <= maxW) break;
-      fontPx -= 0.6;
+  // Double-tap overlay detector (mobile-friendly)
+  let lastTapT = 0;
+  let lastTapId = '';
+  function maybeShowOverlay(cardId, text){
+    const now = performance.now();
+    const dt = now - lastTapT;
+    if(dt < 320 && lastTapId === cardId){
+      // show overlay
+      overlayText.textContent = text;
+      overlayEl.classList.add('show');
+      lastTapT = 0;
+      lastTapId = '';
+      return true;
     }
-    el.style.fontSize = `${fontPx}px`;
-    el.textContent = text;
-    return measureTextPx(text, fontPx, fontFamily) <= maxW;
+    lastTapT = now;
+    lastTapId = cardId;
+    return false;
   }
 
-  function wrapByWords(text, maxW, fontPx, fontFamily, maxLines){
-    // Wrap only at spaces; never split words.
-    const words = text.split(/\s+/).filter(Boolean);
-    const lines = [];
-    let cur = '';
-    for(const w of words){
-      const test = cur ? (cur + ' ' + w) : w;
-      const width = measureTextPx(test, fontPx, fontFamily);
-      if(width <= maxW){
-        cur = test;
-      }else{
-        if(cur) lines.push(cur);
-        cur = w;
-        if(lines.length >= maxLines-1) break;
-      }
-    }
-    if(cur && lines.length < maxLines) lines.push(cur);
-    // If there are leftover words not included, return null to indicate it didn't fit.
-    const usedWords = lines.join(' ').split(/\s+/).filter(Boolean).length;
-    if(usedWords < words.length) return None
-    return lines
-
-  # can't use None in JS; placeholder.
-
-  }
-
-  // We'll implement phrase fitting in JS runtime; placeholder here.
-
-  // Rendering and compaction
+  // FLIP
   const gridL=$('gridLeft'), gridR=$('gridRight');
-
   function snap(container){ const m=new Map(); container.querySelectorAll('.card').forEach(el=>m.set(el.dataset.cardId, el.getBoundingClientRect())); return m; }
   function flip(prev, container){
     const now=new Map(); container.querySelectorAll('.card').forEach(el=>now.set(el.dataset.cardId, el.getBoundingClientRect()));
@@ -462,86 +383,20 @@
       el.dataset.cardId=c.cardId;
       el.dataset.side=side;
       el.innerHTML='<div class="t"></div>';
-      const tEl = el.querySelector('.t');
-      tEl.textContent = c.text;
+      el.querySelector('.t').textContent=c.text;
       el.addEventListener('click', ()=>onTap(el));
+      // Double-tap detection using pointerup (more consistent on mobile)
+      el.addEventListener('pointerup', (ev)=>{
+        if(ev.pointerType === 'mouse' && ev.detail >= 2){
+          overlayText.textContent = c.text;
+          overlayEl.classList.add('show');
+          return;
+        }
+        maybeShowOverlay(c.cardId, c.text);
+      });
       round.domByCardId.set(c.cardId, el);
       container.appendChild(el);
     });
-  }
-
-  function refitAllVisibleCards(){
-    // Fit text for all visible cards according to mode
-    const isSingle = settings.contentMode==='single';
-    const cards = document.querySelectorAll('.card .t');
-    cards.forEach(tEl => {
-      const text = tEl.textContent.replace(/\n/g,' ').trim();
-      tEl.style.fontSize = '';
-      if(isSingle){
-        fitSingleWord(tEl, text);
-      }else{
-        fitPhrase(tEl, text);
-      }
-    });
-  }
-
-  function fitPhrase(tEl, text){
-    // Word-boundary wrapping with dynamic font size; no truncation.
-    const fontFamily = getComputedStyle(tEl).fontFamily || 'system-ui';
-    const paddingX = 18;
-    const maxW = tEl.clientWidth - paddingX;
-    const base = parseFloat(getComputedStyle(tEl).fontSize);
-    let fontPx = base;
-    const minPx = Math.max(10, base * 0.70);
-    const maxLines = 3;
-
-    const words = text.split(/\s+/).filter(Boolean);
-
-    function makeLines(px){
-      const lines=[];
-      let cur='';
-      let idx=0;
-      for(const w of words){
-        const test = cur ? (cur + ' ' + w) : w;
-        const width = measureTextPx(test, px, fontFamily);
-        if(width <= maxW){
-          cur = test;
-        }else{
-          if(!cur){
-            // single word doesn't fit even alone -> fail
-            return null;
-          }
-          lines.push(cur);
-          cur = w;
-          if(lines.length >= maxLines) return null;
-        }
-        idx++;
-      }
-      if(cur) lines.push(cur);
-      if(lines.length > maxLines) return null;
-      // verify each line fits
-      for(const line of lines){
-        if(measureTextPx(line, px, fontFamily) > maxW) return null;
-      }
-      return lines;
-    }
-
-    let lines = null;
-    while(fontPx >= minPx){
-      lines = makeLines(fontPx);
-      if(lines) break;
-      fontPx -= 0.6;
-    }
-
-    // If still null, leave as-is (but this means it cannot fit; auto pair reduction should avoid this)
-    if(lines){
-      tEl.style.fontSize = `${fontPx}px`;
-      tEl.textContent = lines.join('\n');
-    }else{
-      // fallback: show as single line (will overflow) but avoid truncation
-      tEl.style.fontSize = `${minPx}px`;
-      tEl.textContent = text;
-    }
   }
 
   function startTimer(){ stopTimer(); round.startTs=performance.now(); $('hudTime').textContent='0:00'; round.timer=setInterval(()=>{ $('hudTime').textContent=formatTime((performance.now()-round.startTs)/1000); },200); }
@@ -554,57 +409,18 @@
     const remain=session.deck.length-session.pos;
     if(remain<=0){ showResults({sessionComplete:true}); return; }
 
-    const desired=choosePairsDesired();
-
-    // We'll select k, but for single-word mode enforce readability by reducing k if needed.
-    let k = Math.min(desired, remain);
-
-    // Build candidate list of pair indices to use for measuring.
-    // We try decreasing k until text fits without truncation.
-    const candidates = (kk)=> session.deck.slice(session.pos, session.pos+kk);
-
-    // Set mode class
-    document.body.classList.toggle('mode-single', settings.contentMode==='single');
-    document.body.classList.toggle('mode-all', settings.contentMode!=='single');
-
-    // Determine columns per side and compute layout accordingly
-    let ok = false;
-    while(k >= 2 && !ok){
-      computeLayout(k);
-      // Temporarily render with k to test fitting
-      const pairIdxs = candidates(k);
-      const testLeft=[]; const testRight=[];
-      pairIdxs.forEach((pairIndex,p)=>{
-        const it=items[pairIndex];
-        // mixed direction doesn't matter for fitting; check both fi/en for words
-        testLeft.push(it.fi); testRight.push(it.en);
-      });
-
-      if(settings.contentMode==='single'){
-        // single-word mode: every FI and EN item must fit on one line in its card width.
-        // We'll approximate using max word width with base font and min font.
-        // We'll do a real DOM measurement after rendering.
-        ok = true;
-      }else{
-        // all-content: we'll rely on fitPhrase. We'll accept ok for now.
-        ok = true;
-      }
-
-      if(!ok):
-        k -= 1
-
-    }
-
+    const desired=choosePairs();
+    const k=Math.min(desired, remain);
     round.k=k;
     $('hudTarget').textContent=String(k);
     $('hudMatched').textContent='0';
     $('hudMistakes').textContent='0';
+    computeLayout(k);
 
-    // Consume pairs
     const pairIdxs=session.deck.slice(session.pos, session.pos+k);
     session.pos+=k;
 
-    const left=[]; const right=[];
+    const left=[], right=[];
     round.mapByCardId=new Map();
     round.domByCardId=new Map();
 
@@ -626,60 +442,9 @@
     showView('game');
     renderSide(gridL, left, 'L');
     renderSide(gridR, right, 'R');
-
-    // Now fit text to avoid truncation
-    // We must fit after render because widths are known.
-    // For single mode: fitSingleWord; if any cannot fit even at min, restart round with fewer pairs.
-
-    const isSingle = settings.contentMode==='single';
-    if(isSingle){
-      // Check all cards; if any fail, reduce k and retry (without consuming new pairs by rewinding pos).
-      let retries = 0;
-      while(retries < 5){
-        let allOk = true;
-        document.querySelectorAll('.card .t').forEach(tEl => {
-          const text = tEl.textContent.trim();
-          const okFit = fitSingleWord(tEl, text);
-          if(!okFit) allOk = false;
-        });
-        if(allOk) break;
-        // retry with fewer pairs
-        retries += 1;
-        if(round.k <= 2) break;
-        // rewind session pos by current k and re-run with k-1
-        session.pos -= round.k;
-        k = round.k - 1;
-        round.k = k;
-        $('hudTarget').textContent=String(k);
-        computeLayout(k);
-        const pairIdxs2=session.deck.slice(session.pos, session.pos+k);
-        session.pos += k;
-
-        const left2=[]; const right2=[];
-        round.mapByCardId=new Map();
-        round.domByCardId=new Map();
-        pairIdxs2.forEach((pairIndex,p)=>{
-          const it=items[pairIndex];
-          const key='p'+session.rounds+'_'+p+'_'+pairIndex;
-          const fiId=key+'_fi', enId=key+'_en';
-          const swap=Math.random()<0.5;
-          if(!swap){ left2.push({cardId:fiId, text:it.fi}); right2.push({cardId:enId, text:it.en}); }
-          else{ left2.push({cardId:enId, text:it.en}); right2.push({cardId:fiId, text:it.fi}); }
-          round.mapByCardId.set(fiId, pairIndex);
-          round.mapByCardId.set(enId, pairIndex);
-        });
-        shuffle(left2); shuffle(right2);
-        round.cardsL=left2; round.cardsR=right2;
-        gridL.innerHTML=''; gridR.innerHTML='';
-        renderSide(gridL, left2, 'L');
-        renderSide(gridR, right2, 'R');
-      }
-    }else{
-      refitAllVisibleCards();
-    }
-
     startTimer();
-    session.rounds += 1;
+
+    session.rounds+=1;
     updateSetupStats();
   }
 
@@ -695,6 +460,9 @@
     const id=el.dataset.cardId;
     const side=el.dataset.side;
     ensureAudio();
+
+    // If overlay is open, don't process taps on cards (overlay closes by its own handler)
+    if(overlayEl.classList.contains('show')) return;
 
     if(!round.selected){ round.selected={side,id}; el.classList.add('selected'); return; }
     if(round.selected.side===side){
@@ -727,12 +495,6 @@
         round.cardsR=round.cardsR.filter(c=>c.cardId!==aId && c.cardId!==bId);
         renderSide(gridL, round.cardsL, 'L');
         renderSide(gridR, round.cardsR, 'R');
-        // refit after rerender
-        if(settings.contentMode==='single'){
-          document.querySelectorAll('.card .t').forEach(tEl=>fitSingleWord(tEl, tEl.textContent.trim()));
-        }else{
-          refitAllVisibleCards();
-        }
         flip(prevL, gridL); flip(prevR, gridR);
         round.matched+=1; $('hudMatched').textContent=String(round.matched);
         round.lock=false;
@@ -807,19 +569,17 @@
   $('btnNextRound').addEventListener('click', ()=>{ if(!session.active){ showView('setup'); return; } startRound(); });
 
   function init(){
-    // Defaults
     selCat.value='__all__'; settings.category='__all__';
     $('selPairs').value='8'; settings.pairsChoice='8';
 
     // Default difficulty: Intermediate
     setSeg('segDifficulty','intermediate'); settings.difficulty='intermediate'; updateDiffNote();
 
-    setSeg('segContent','single'); settings.contentMode='single';
-    document.body.classList.add('mode-single');
-
+    setSeg('segContent','single'); settings.contentMode='single'; document.body.classList.add('mode-single');
     setSeg('segSound','on'); settings.sound=true;
     setSeg('segHaptics','on'); settings.haptics=true;
 
+    // slider default 100%
     rngText.value = '100';
     settings.fontScale = 1.0;
     applyFontScale();
@@ -831,6 +591,7 @@
 
   init();
   toast(`Loaded ${payload.count} pairs`);
+
 })();
 </script>
 </body>
