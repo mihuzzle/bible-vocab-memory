@@ -1,1 +1,0 @@
-v5 (based on your v4): Difficulty targets updated (Beginner 8.0s/pair, Intermediate 3.6s/pair, Expert 1.8s/pair). Overlay changed to double-tap on a card (tap elsewhere to close). Replace index.html in your GitHub Pages repo root.
