@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>FI ↔ EN Bible Vocab Match</title>
+  <meta name="theme-color" content="#0b1220" />
+  <style>
+    :root{--bg:#0b1220;--text:#e5e7eb;--muted:#9ca3af;--good:#34d399;--bad:#fb7185;--shadow:0 10px 25px rgba(0,0,0,.35);--radius:16px;--gap:10px;--cardFont:12px;--fontScale:1.0;}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{height:100%;}
+    body{margin:0;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:radial-gradient(1200px 800px at 20% 10%, #1e3a8a33, transparent),radial-gradient(1000px 700px at 80% 30%, #0ea5e933, transparent),linear-gradient(180deg,var(--bg),#050814);color:var(--text);}
+
+    .app{height:100%;display:flex;flex-direction:column;}
+    header{padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg, rgba(11,18,32,.95), rgba(11,18,32,.65));backdrop-filter:blur(10px);}
+    .title{font-weight:800;font-size:16px;letter-spacing:.2px;margin:0}
+    .subtitle{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.3}
+    main{flex:1;min-height:0;padding:12px 14px 14px;display:flex;overflow:hidden;}
+
+    .view{display:none;width:100%;height:100%;}
+    .view.active{display:block;}
+
+    #viewSetup.active{overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:18px;}
+    #viewGame.active{overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:18px;}
+
+    .setupGrid{display:grid;grid-template-columns:1fr;gap:12px;max-width:720px;margin:0 auto;}
+    .panel{background:rgba(17,24,39,.70);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.20);}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+    select{border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(15,23,42,.85);color:var(--text);padding:10px 12px;font-size:14px;outline:none;width:100%;}
+    .field{flex:1 1 200px;min-width:200px;}
+
+    .seg{display:flex;gap:8px;flex-wrap:wrap;}
+    .seg button{border:1px solid rgba(255,255,255,.12);background:rgba(15,23,42,.85);color:var(--text);padding:10px 12px;border-radius:999px;font-weight:700;cursor:pointer;}
+    .seg button.on{background:rgba(96,165,250,.22);border-color:rgba(96,165,250,.35);}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{border:0;border-radius:14px;padding:12px 14px;font-weight:800;cursor:pointer;}
+    .btn.primary{background:linear-gradient(135deg,#2563eb,#60a5fa);color:#fff;box-shadow:0 10px 25px rgba(37,99,235,.25);}
+    .btn.secondary{background:rgba(17,24,39,.75);color:var(--text);border:1px solid rgba(255,255,255,.12);}
+    .btn.danger{background:rgba(244,63,94,.14);color:#fff;border:1px solid rgba(244,63,94,.35);}
+
+    .note{color:var(--muted);font-size:12px;line-height:1.35}
+    .statline{display:flex;flex-wrap:wrap;gap:12px;}
+    .stat{background:rgba(15,23,42,.70);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 12px;min-width:140px;}
+    .stat .k{font-size:12px;color:var(--muted)}
+    .stat .v{font-size:16px;font-weight:900;margin-top:2px}
+
+    .sliderWrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    input[type=range]{width:100%;accent-color:#60a5fa;}
+    .sliderVal{min-width:48px;text-align:right;color:var(--muted);font-size:12px;}
+
+    .hud{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+    .hud .left,.hud .right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .pill{background:rgba(17,24,39,.75);border:1px solid rgba(255,255,255,.10);border-radius:999px;padding:8px 10px;font-size:12px;color:var(--muted);}
+    .pill strong{color:var(--text)}
+
+    .board{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);align-items:start;}
+    .side{background:rgba(17,24,39,.40);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:var(--gap);display:flex;flex-direction:column;gap:var(--gap);}
+    .sideTitle{font-size:12px;color:var(--muted);margin:0 0 2px 2px}
+
+    /* Always one column per side: FI left, EN right */
+    .grid{display:grid;grid-template-columns:1fr;grid-auto-rows:minmax(52px,auto);gap:var(--gap);align-content:start;}
+
+    /* No truncation: wrap naturally */
+    .card{border-radius:var(--radius);background:rgba(15,23,42,.92);border:1px solid rgba(255,255,255,.10);box-shadow:0 6px 18px rgba(0,0,0,.20);
+      padding:6px 8px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none;
+      transition:transform .18s ease,opacity .18s ease,border-color .18s ease,background .18s ease;}
+    .card:active{transform:scale(.985);}
+    .card .t{font-size:calc(var(--cardFont) * var(--fontScale));font-weight:800;line-height:1.18;display:block;white-space:normal;overflow-wrap:break-word;word-break:normal;hyphens:auto;}
+    .card.selected{outline:3px solid rgba(96,165,250,.50);border-color:rgba(96,165,250,.55);}
+    .card.good{outline:3px solid rgba(52,211,153,.55);border-color:rgba(52,211,153,.55);background:rgba(52,211,153,.12);}
+    .card.bad{outline:3px solid rgba(251,113,133,.55);border-color:rgba(251,113,133,.60);background:rgba(251,113,133,.10);}
+    .card.removing{opacity:0;transform:scale(.96);}
+
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;}
+    .overlay.show{display:flex;}
+    .overlayCard{max-width:780px;width:100%;background:rgba(17,24,39,.96);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px;box-shadow:var(--shadow);}
+    .overlayCard .big{font-weight:900;font-size:16px;line-height:1.35}
+    .overlayCard .small{color:var(--muted);font-size:12px;margin-top:8px}
+
+    .resultsWrap{max-width:720px;margin:0 auto;}
+    .bigNum{font-size:34px;font-weight:1000;margin:6px 0 0;}
+
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;background:rgba(17,24,39,.95);color:var(--text);border:1px solid rgba(255,255,255,.10);padding:10px 12px;border-radius:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:99;max-width:92vw;text-align:center;font-size:13px;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  </style>
+</head>
+<body class="mode-single">
+<div class="app">
+  <header>
+    <div class="title">FI ↔ EN Bible Vocab Match</div>
+    <div class="subtitle">Tap one card on each side to match Finnish and English. No repeats within a session.</div>
+  </header>
+  <main>
+    <section class="view active" id="viewSetup" aria-label="Setup">
+      <div class="setupGrid">
+        <div class="panel">
+          <div class="row">
+            <div class="field"><label for="selCategory">Category</label><select id="selCategory"></select></div>
+            <div class="field"><label for="selPairs">Pairs per round</label>
+              <select id="selPairs" disabled><option value="5" selected>5 (fixed)</option></select>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <label>Difficulty (time per pair)</label>
+          <div class="seg" id="segDifficulty">
+            <button type="button" data-value="beginner">Beginner</button>
+            <button type="button" data-value="intermediate" class="on">Intermediate</button>
+            <button type="button" data-value="expert">Expert</button>
+          </div>
+          <div class="note" id="diffNote" style="margin-top:6px">Intermediate: 3.6s per pair</div>
+
+          <div style="height:10px"></div>
+          <label for="rngText">Text size</label>
+          <div class="sliderWrap">
+            <input id="rngText" type="range" min="85" max="125" step="5" value="100" />
+            <div class="sliderVal" id="txtVal">100%</div>
+          </div>
+          <div class="note" style="margin-top:6px">Tip: Double‑tap a card during play to zoom the text.</div>
+
+          <div style="height:10px"></div>
+          <label>Content</label>
+          <div class="seg" id="segContent"><button type="button" data-value="single" class="on">Single words only</button><button type="button" data-value="all">All content</button></div>
+
+          <div style="height:10px"></div>
+          <div class="row">
+            <div class="field"><label>Sound (ding on correct)</label><div class="seg" id="segSound"><button type="button" data-value="on" class="on">On</button><button type="button" data-value="off">Off</button></div></div>
+            <div class="field"><label>Haptics (vibrate on incorrect)</label><div class="seg" id="segHaptics"><button type="button" data-value="on" class="on">On</button><button type="button" data-value="off">Off</button></div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="note" id="setupNote">Changing category/content/pair settings will reset the current session deck.</div>
+        </div>
+
+        <div class="panel">
+          <div class="statline">
+            <div class="stat"><div class="k">Session remaining</div><div class="v" id="stRemain">—</div></div>
+            <div class="stat"><div class="k">Rounds played</div><div class="v" id="stRounds">0</div></div>
+            <div class="stat"><div class="k">Session points</div><div class="v" id="stPoints">0</div></div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="actions">
+            <button class="btn primary" id="btnStart">Start new session</button>
+            <button class="btn secondary" id="btnContinue" disabled>Continue session</button>
+            <button class="btn danger" id="btnReset" disabled>Reset session</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="viewGame" aria-label="Game">
+      <div class="hud">
+        <div class="left">
+          <div class="pill">Time: <strong id="hudTime">0:00</strong></div>
+          <div class="pill">Matched: <strong id="hudMatched">0</strong>/<span id="hudTarget">5</span></div>
+          <div class="pill">Mistakes: <strong id="hudMistakes">0</strong></div>
+        </div>
+        <div class="right"><button class="btn secondary" id="btnBackSetup">Setup</button></div>
+      </div>
+      <div class="board">
+        <div class="side"><div class="sideTitle">Finnish</div><div class="grid" id="gridLeft"></div></div>
+        <div class="side"><div class="sideTitle">English</div><div class="grid" id="gridRight"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="viewResults" aria-label="Results">
+      <div class="resultsWrap">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end;">
+            <div>
+              <div class="note" id="resTitle">Round results</div>
+              <div class="bigNum" id="resAccuracy">—%</div>
+              <div class="note" id="resDetails">—</div>
+            </div>
+            <div style="min-width:240px">
+              <div class="statline">
+                <div class="stat" style="min-width:160px"><div class="k">Time</div><div class="v" id="resTime">—</div></div>
+                <div class="stat" style="min-width:160px"><div class="k">Target</div><div class="v" id="resTarget">—</div></div>
+                <div class="stat" style="min-width:160px"><div class="k">Points (round)</div><div class="v" id="resPts">—</div></div>
+                <div class="stat" style="min-width:160px"><div class="k">Points (session)</div><div class="v" id="resPtsTotal">—</div></div>
+              </div>
+            </div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="actions">
+            <button class="btn primary" id="btnNextRound">Next round</button>
+            <button class="btn secondary" id="btnResultsSetup">Back to setup</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <div class="overlayCard">
+      <div class="big" id="overlayText">—</div>
+      <div class="small">Tap anywhere to close</div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>window.VOCAB_PAYLOAD={"count":1560,"categories":["ammatti","asuminen","eläin","epäjumala","eriseura","fraasi","fraasit","heimo","henkilö","historia","juhla","jumaluus","kalastus","kansa","kasvi","kasvit","kertomus","kirkko","lainaus","maanviljelys","mitta","musiikki","oikeus","paikka","paimentolaisuus","perhe","raamattu","ryhmä","ryhmä, filosofeja","seurat","sota","suviseurat","temppeli","terveys","toiminta","usko","uskonnot"],"data":[["\"Heittäkää kaikki murheenne Hänen päällensä. Hän pitää teistä huolen.┤ (1 Piet. 5:7)","\"Casting all your care upon Him, for He careth for you┤.",18],["\"Sillä jokainen, joka Herran nimeä avuksensa huutaa, tulee autuaaksi.\" (Room. 10:13)","\"For whosoever shall call upon the name of the Lord shall be saved.\"",18],["Älä kanna maksettuja velkoja tunnollasi.","Do not carry paid debts on your conscience.",6],["1. Aikakirja","I Chronicles",26],["1. Kuningasten Kirja","I Kings",26],["1. Moseksen Kirja","Genesis",26],["1. Samuelin Kirja","I Samuel",26],["2. Aikakirja","II Chronicles",26],["2. Kuningasten Kirja","II Kings",26],["2. Moseksen Kirja","Exodus",26],["2. Samuelin Kirja","II Samuel",26],["3. Moseksen Kirja","Leviticus",26],["4. Moseksen Kirja","Numbers",26],["5. Moseksen Kirja","Deuteronomy",26],["a ja o","alpha and omega",35],["Aabrahamin helma","bosom of Abraham",6],["aamuhartaus","morning devotion",34],["Aaron","Aron",8],["aasi","ass",2],["adventismi","Adventism",36],["ahdas portti","narrow gate",35],["ahdas portti","strait gate",35],["ahdistaa","oppress",35],["ahdistus","oppression, tribulation",35],["ahdistus","tribulation",35],["ahkera","diligent",35],["ahkeroida","endeavor",35],["ahne","covetous",3],["ahtaalla","distressed",35],["ahtaalla","oppressed",35],["aitta","storage",19],["ajallinen","temporal",35],["ajalliset toimet","emporal/everyday duties/tasks/activities",6],["Akaia","Achaia",23],["alamainen","subject",35],["alamainen","subservient",35],["alamaisia (teille) (Lk 10:20)","subject unto you/have power over spirits",6],["alkuhartaus","opening devotion",29],["alkuhartaus","opening devotion",34],["alkupuhe","opening service",34],["alkurukous","opening prayer",29],["alkurukous","opening prayer",34],["alustaja","presenter",34],["alustus","introduction",34],["alustus","presentation",34],["amalekilaiset","Amalekites",13],["ammentaa","dip",35],["Amos","Amos",26],["Ananias","Ananias",8],["Andreas","Andrew",8],["anglikaaninen kirkko","Anglican church",36],["ankara","severe",35],["ankaruus","severity",35],["Anna evankeliumin paistaa tunnon valkeutena etsivien sydämiin.","Let the light of the gospel shine as a light of the conscience into searching hearts.",6],["Anna minulle se osa tavarasta, joka minulle tulee.","Give me my share/part of my inheritance.",6],["Anna profetissa","Anna a prophetess",8],["Anna virvoittavan veden laskeutua sydämiin.","Let the refreshing dew settle into everyoneös heart.",6],["anoa","implore",35],["anoa","beseech",35],["anomus","petition",35],["anomus ja pyyntö","petition and request",6],["ansaita","deserve",35],["ansaita","earn",35],["ansaita","merit",35],["ansio","merit",35],["ansioton","meritless",35],["antaa anteeksi","remit",35],["antaa anteeksi","forgive",35],["anteeksianto","forgiveness",35],["antifoni","antiphon",21],["antifoninen","antiphonal",21],["Antiokia","Antioch",23],["Apollo","Apollos",8],["apostolinen opetus","apostolic instruction",4],["apostolisen perimyksen mukaisesti","according to the apostolic succession",6],["Apostolitten Teot","Acts of the Apostles",26],["arjen kiusaukset","everyday temptations and stresses/worries/problems",6],["arkipyhä","ecclesiastical holiday",17],["arkkipiispa","Archbishop (The Most Rev.)",17],["arkkivirsi","broadsheet",21],["armahtaa","have mercy (on)",35],["armahtaa","pardon",35],["armelias","compassionate",35],["armelias","merciful",35],["armo","mercy",35],["armoistuin","mercy seat",32],["armoistuin","mercy seat",35],["armoistuin","throne of grace",35],["armolahja","gift of grace",35],["armollinen","gracious",35],["armon aika","time of grace",6],["armon kerjäläinen","beggar of/for grace / grace beggar",6],["armoton","merciless",35],["armovaltakunta","kingdom of grace",35],["armovuosi","year of grace",35],["arpa","raffle",34],["arpajaiset","raffle",34],["arvata oma tilansa","understand oneös own state",6],["arvojärjestys","priority",35],["asianajaja","orator",0],["asianajaja","lawyer",0],["assessori","canon",17],["astia","measure",20],["Ateena","Athens",23],["ateenalaiset","Athenians",13],["Augsburgin uskontunnustuksen puolustus","defence of Augsburgös confession (of faith)",17],["Augustus","Augustus",8],["autuas","blessed",35],["autuus","blessedness",35],["autuus","bliss",35],["autuus","salvation",35],["autuutemme perusta","basis of our salvation",6],["avajaisseurat","dedication services",29],["avajaisseurat","dedication services",34],["avata kylki","pierce his side",6],["avata ymmärrys","enlighten the understanding",6],["avioliittoon vihkiminen","marriage",17],["avoin lähde","open fountain",6],["bahaismi","Bahaism",36],["balsami","balm",33],["balsamoida","embalm",33],["baptismi","Baptism",36],["Bartolomeus","Bartholomew",8],["Batseba","Bathseba",8],["Beetfage","Betphage",23],["Beetlehem Efrata","Bethlehem Ephratah",23],["Beetsaida","Bethsaida",23],["Betania","Bethany",23],["Betesda (lammikko)","Bethesda (pool)",23],["buddhalaisuus","Buddhism",36],["Daavidin Poika","Son of David",11],["Damasko","Damascus",23],["damaskolaiset","Damascenes",13],["Daniel","Daniel",26],["denaari","denarius",20],["diakoni","deacon",17],["diakoni","parish social worker",17],["diakonia","deaconite",17],["diakonissa","deaconess",17],["diakonissa","parish nurse",17],["Eden","Eden",23],["Eeli","Eli",8],["Efeso","Ephesus",23],["egyptiläinen","Egyptian",8],["ehtooliskirkko","communion service",34],["ehtoollinen","Holy Communion",17],["ehtoollinen","Holy Supper",17],["ehtoolliskirkko","communion service",29],["ehtoollisliturgia","communion rites",29],["ei ole yhtään kadotusta niissä... (Room 8:1)","there is therefore no condemnation to them",6],["Ei yksikään liha taida lain töiden kautta Hänen edessään vanhurskaaksi tulla┤. (Room 3:20)","ñTherefore by the deeds of the law there shall no flesh be justified in His sight.┤",18],["Eivät terveet tarvitse parantajaa, vaan sairaat┤ (Matt. 9:12)","The healthy do not need the healer, but the sick do. /┤They that be whole need not a physician, but they that are sick┤.",18],["Elia","Elijah",8],["Elias","Elias",8],["Elisa","Elisha",8],["Eloa on paljon, mutta työmiehiä on vähän┤. (Mt 9:37)","ñThe harvest truly is plenteous, but the labourers are few┤.",18],["elonleikkuujuhla","feast of unleavened bread",10],["Elämän Herra","Prince of Life",11],["elämän tie","way/road of life",35],["elämänkatsomustieto","philosophy of life",17],["Elävien ja kuolleitten tuomari","Judge of the Quick and dead",11],["elävä kristillisyys","living Christianity",4],["emäntä","cook",34],["enkelit, palvelukseen lähetetyt henget","angels, the spirits which were sent to serve",6],["enkelten kuoro","choir of angels",21],["Ennen kuin maailman perustus oli laskettu","Before the foundation of the world was laid.",6],["epikurolaiset","Epicureans",27],["Epistola Hebrealaisille","Hebrews",26],["epäillä/epäilys","doubt",35],["epäjumala","idol",3],["epäjumalan palvelija","idolater",3],["epäjumalan palvelus","idolatry",3],["epätoivo","despair",35],["epäusko","unbelief",35],["epäuskoinen","unbeliever",35],["epäuskon tila","state of unbelief / in unbelief",6],["erehtymätön","infallible",4],["erehtyvä","erring",4],["erehtyvä","fallible",4],["erimielisyys","dissension",4],["eriseura","heresy",4],["eriseurainen","heretic",4],["esikartano","court",32],["esikoinen","firstborn",35],["esikoiset","Firstborn, Amerikassa: the Old Apostolic Lutheran Church",4],["esikuvallinen","exemplary",35],["esikuvallinen","prophetical",35],["esilaulaja","song leader",29],["esilaulaja","song leader",34],["esipiha","court",32],["esirippu","veil",32],["esirukous","intercession",35],["esirukous","prayer on behalf of somebody",35],["Esran Kirja","Ezra",26],["Esterin Kirja","Esther",26],["etiopialainen","Ethiopian",8],["etiopialaiset","Ethiopians",13],["etsikkoaika","time of visitation",35],["Etsikää ensin Jumalan valtakunta ja Hänen vanhurskauttansa, niin kaikki teille sen ohessa annetaan┤. (Mt 6:33)","┤But seek ye first the kingdom of God, and His righteousness, and all these things shall be added unto you┤.",18],["Eutykus","Eutychus",8],["evankelisuus","Evangelical movement",17],["evankeliumi","gospel",35],["evankeliumin osallisuudessa olevat","believers / partakers of the gospel",6],["evankeliumin ydin","core/essence of the gospel",6],["farao","pharaoh",8],["farisealaiset","Pharisees",27],["feeviläiset","Levites",27],["Filippus","Philip",8],["filistealaiset","Philistines",13],["Foinikia","Phenice",23],["Galilea","Galilee",23],["galilealainen","Galilaean",13],["Galilean Kaanaa","Cana of Galilee",23],["Gamaliel","Gamaliel",8],["Genesaretin järvi","Gennasaret, lake of gennasaret",23],["Getsemane","Gethsemane",23],["Golgata (pääkallon paikka)","Golgotha",23],["graanaattiomena","pomegranate",14],["haava","wound",33],["haava","wound",33],["Habakuk","Habakkuk",26],["Haggai","Haggai",26],["hajaannus","division",4],["hajaannus","schism",4],["halleluja-psalmit","psalms of praise",21],["hallitusmies","ruler",0],["halu uskoa teidän kanssanne","wish to believe with you",6],["halvattu","palsy",33],["halveksia","despise",35],["halveksia","disdain",35],["Hannas","Annas",8],["hapatus","leaven",35],["harhaantunut","misguided",35],["harhailla","stray",35],["harhailla","wander",35],["harppu","harp",21],["harras","devoted",35],["harras","fervent",35],["hautaan siunaaminen","burial service",17],["hautaan siunaaminen","funeral",17],["hautajaisvirsi","dirge",21],["hautajaisvirsi","funeral hymn",21],["hebrealaiset","Hebrews",13],["hedelmätön","barren",35],["heikkouden henki","spirit of infirmity",33],["heikkous","weakness",35],["heinäsirkka","locus",2],["helatorstai","Ascension Day",17],["helistää","jingle",21],["helistää","rattle",21],["hellenistit","Grecians",13],["helluntailaisuus","Pentecostalism",36],["helluntaipäivä","Pentecost",17],["helvetti","hell",35],["hempeys","leniency",4],["hempeys","lenience",35],["hempeä","lenient",35],["hengellinen","spiritual",35],["hengellinen hallitus","spiritual government",35],["hengellinen laulu","spiritual song",21],["hengellinen pimeys","spiritual darkness",6],["Henki todistaa meidän henkemme kanssa","Spirit testifies/witnesses with our spirit",6],["henkien erottamisen lahja","gift to distinquish between spirits",4],["henkien taistelu","spiritual battle",4],["herneenpalko","husk",14],["Herodes","Herod",8],["Herodias","Herodias",8],["Herra","Lord",11],["Herra Jumala","Lord God",11],["Herra Sebaot/ Zebaot","The Lord of hosts",11],["Herra voimallinen sodassa","The Lord mighty in battle",11],["Herra väkevä ja voimallinen","The Lord strong and mighty",11],["hervoton","cripple",33],["herännäisyys","Old Pietists",17],["herätysten ajat","times of awakening/spiritual revival",9],["Hesekiel","Ezekiel",26],["hieho","heifer",2],["hiippakunta","diocese",17],["hiippakuntakokous","diocesan synod",17],["himo","lust",35],["himoita","covet",35],["himoita","lust",35],["hindulaisuus","Hinduism",36],["Hiskia","Hezekiah",8],["Hispania","Spain",23],["hivutustauti","consumption",33],["hoitokokous","caretaking meeting",4],["Hooreb","Horeb",23],["Hoorin vuori","Mount Hor",23],["hopeainen jumala","god of silver",3],["hopearaha","piece of silver",20],["horjua","falter",35],["horjua","waver",35],["Hosea","Hosea",26],["houkutella","entice",35],["houkutella","tempt",35],["houkutus","enticement",35],["houkutus","temptation",35],["hoviherra","an eunuch",8],["huilu","flaute/flute",21],["hukkua","drown",35],["hukkua","perish",35],["huoli","concern",4],["huoneenhaltija","steward",0],["huorintekijä","whoremonger",3],["hurja","ferocious",35],["hurskas","pious",35],["hurskaus","piety",35],["Hyvän paimenen kutsuva ääni","calling voice of the Good Shepherd",6],["hyvässä turvassa","comforted",35],["hyvässä turvassa","good cheer",35],["Hän neuvoo, opettaa ja lohduttaa.","He counsels, teaches and comforts.",6],["Hän peittää, kätkee minut, (Ps 27:5)","He covers/hides/keeps me. ñHe shall hide me...\"",6],["häpeä","disgrace",35],["häpeä","shame",35],["häpeällinen","disgraceful",35],["härkä","ox",2],["hätä","distress",35],["häväistys","insult",35],["häväistys","dishonor",35],["iankaikkinen","everlasting",35],["iankaikkinen","eternal",35],["Iankaikkinen Isä","Everlasting Father",11],["iankaikkisesti","eternally",35],["iankaikkisuus","eternity",35],["ies","yoke",19],["ihme","miracle",35],["Ihmeellinen neuvonantaja","Wonderful Councellor",11],["Ihmisen poika","Son of Man",11],["ihmismielellä","with our human mind",6],["Iisai","Jesse",8],["Iisak","Isaac",8],["Ikonion","Iconium",23],["ilkeys","malice",35],["ilkeys","meanness",35],["ilman lain tekoja","without the works of the law",6],["ilmestysmaja","tabernacle",32],["ilmoitetaan uskosta uskoon","is proclaimed from faith to faith",6],["ilmoittaa","make known",35],["ilmoittaa","proclaim",35],["ilmoittaa","reveal",35],["Ilmoittaa Jeesuksen Kristuksen ristiinnaulittuna","Proclaims J.C. crucified. / Makes known the crucifixion of J.C.",6],["ilo","delight",35],["ilo","joy",35],["iloöljy","oil of gladness",33],["iltahartaus","evening devotion",34],["iltaohjelma","evening program",34],["islam/muslimit","Islam/Muslims",36],["isoppi","hyssop",33],["isot seurat","special services",29],["isot siskot","big sisters",34],["isot veljet","big brothers",34],["israelilaiset","Israelites",13],["Israelin Pyhä","Holy One of Israel",11],["Israelin voimallinen","Mighty One of Israel",11],["Isä","Father",11],["Isän sydämeltä asti","from the heart of the Father",6],["isäntä","master",0],["itää","germinate",19],["Jaakob","James",8],["Jakobin Epistola","James",26],["jalkaini kynttilä (lamppu) (Ps 119:105)","lamp/torch unto my feet",6],["Jeesus Kristus meidän Herramme","Jesus Christ our Lord",11],["Jeesus Nasaretilainen","Jesus of Nazaret",11],["Jeesus, kiusausten voittaja","Jesus, the Victor over Temptation",11],["jehovan todistajat","Jehovah's witnesses",36],["Jeremia","Jeremiah",26],["Jeremian Valitusvirret","Lamentations",26],["Jesaia","Isaiah",26],["Jobin Kirja","Job",26],["Joel","Joel",26],["Johanneksen 1. Epistola","John I",26],["Johanneksen 2. Epistola","John II",26],["Johanneksen 3. Epistola","John III",26],["Johanneksen Evankeliumi","Gospel of St. John",26],["Johanneksen Ilmestys","Revelation",26],["Johannes","John",8],["Johannes Kastaja","John the Baptist",8],["johtaa harhaan","lead astray",35],["johtaa harhaan","misguide",35],["johtaa harhaan","mislead",35],["johtokunnan jäsen","board member",34],["johtokunta","board",34],["Jona","Jonah",26],["Joona","Jonah",8],["Joosef","Joseph",8],["Joosef arimatealainen","Joseph of Arimathaea",8],["Joppe","Joppa",23],["Josuan Kirja","Joshua",26],["joukko ( nurkkakunta)","faction",4],["joulujuhla","Christmas program",29],["joulupäivä","Christmas Day",17],["joutua uskon puolesta haaksirikkoon","become shipwrecked in faith",6],["joy","mirth",21],["Jubal","Jubal",21],["juhannuspäivä","St. John's Day",17],["juhannuspäivä","St. John's Day",17],["juhlaesitelmä","address",29],["Juhlakansa on pukeutunut juhla-asuun.","The guests were clothed in festive garments.",6],["julistaa","declare",35],["julistaa","preach",35],["julistaa","proclaim",35],["julistaa armokutsua","proclaim/preach the call of grace",6],["julkaisut","publications",34],["Jumala","God",11],["Jumala antaa voiman olla uskomassa.","God gives us strength to believe.",6],["Jumala pysäytti hänet.","God stopped him.",6],["Jumala tarttui hänen elämäänsä.","God took hold of his life. / God made him stop to think.",6],["Jumalalle otollinen","acceptable to God",6],["jumalallinen","divine",35],["Jumalan edessäsi","before God",6],["Jumalan Henki lepää pohjoisella maalla.","Godös spirit rests in the northern land",6],["Jumalan Henki ohjaa ulkonaisissakin asioissa","G.S. also guides in practical situations/in external matters.",6],["Jumalan hukkumaton sana","Godös unperishing word",6],["Jumalan kunnia","glory of God",6],["Jumalan käsivarsi ei ole lyhentynyt.","Godös arm reaches everyone.",6],["Jumalan maja ihmisten keskellä","house/lodge of God in the midst of/among people",6],["Jumalan perheväki","household of God",6],["Jumalan Poika","The Son of God",11],["Jumalan sana","word of God",35],["Jumalan sanan ylönkatsominen","scorning the word of God",6],["Jumalan tahdon tekeminen","following Godös will /doing according to the will of God",6],["Jumalan valtakunta on laskettu tänne alas.","The Kingdom of God has been lowered unto the earth.",6],["Jumalan valtakunta on sinua lähestynyt.","The Kingdom of God has approached you / has come near you.",6],["Jumalan voima","power of God",6],["jumalanlapsi","child of God",35],["jumalanpalvelus","Church Service",17],["jumalanpalvelus","Sunday Service",17],["jumalanpalvelus","worship service",29],["jumalanpilkka","blasphemy",35],["Jumalasta vieraantuminen/irtaantuminen","separating/alienation from God",6],["jumalaton","godlessness",35],["jumalaton","ungodly",35],["jumalattomuus","ungodliness",35],["juomanlaskija","butler",0],["juomari","drunkard",3],["Juuda","Judah",8],["Juudaan Epistola","Jude",26],["Juudas Iskariot","Judas Iscariot",8],["juutalainen","Jew",13],["juutalaisten kuningas","King of the Jews",11],["juutalaisuus","Judaism",36],["jyvä","corn",14],["järjen kautta uskotaan","believe by reason / faith is based on reason",6],["järjestysmies","usher",34],["järkeisusko","rational faith",36],["jäytää","eat",33],["jäähyväisvirsi","farewell hymn",21],["kaarne","serpent",2],["kadotus","condemnation",35],["kadotus","condemnation",35],["kadotus","damnation",35],["kadotus","perdition",35],["kadotus","perdition",35],["Kaifas","Caiaphas",8],["kaihi","dim eyes",33],["kaikkein pyhin","holy of holies",32],["kaikkein pyhin","most holy",32],["Kaikki ovat pois poikenneet, kaikki tyynni kelvottomiksi käyneet. Ei ole yhtään, joka hyvää tekee. Ei yhden yhtäkään.┤ (Ps. 14:3 ja 53. 45)","They are all gone aside, they are all together become filthy: there is none that doeth good, no, not one",18],["kaikkitietävä","all-knowing",35],["kaikkitietävä","omniscient",35],["kaikkivaltias","almighty",35],["kaisla","reed",14],["Kaislameri","Red sea",23],["kaitsea","herd",35],["kaitsea","tend",35],["kalastaja","fisherman",12],["kamaripalvelija","an eunuch",8],["Kandake, Etiopian kuningatar","Candace, queen of the Ethiopians",8],["kannattaja","follower",4],["kannattaja","supporter",4],["kannattaja","sympathizer",4],["kansallissoitin","national instrument",21],["kansankirkko","national church",17],["kansanlaulut","folksongs",21],["kansojen vaiheissa","in the phases/history of nations",6],["kantele","Lappish harp",21],["kanttori","church organist",17],["kanttori","director of music",17],["kappalainen","second pastor",17],["kappalainen","junior assistant",17],["karismaattinen liike","charismatic movement",17],["karitsa","lamb",2],["Karitsa","Lamb",11],["karitsa","lamb",24],["karkelo","frolic",21],["kaste","baptism",17],["Kasvaminen armossa tarkoittaa itsensä huonommaksi/raadollisemmaksi tuntemista.","Growing in grace means feeling poorer/feeling more wretched.",6],["katekismus","Catechism",17],["katkerain vetten luota","from bitter waters / from foul waters",6],["katoamaton (kruunu)","incorruptible (crown)",35],["katoava","perishing",35],["katoava","transitory",35],["katolinen kirkko","Catholic church",36],["katua","repent",35],["katumaton","impenitent",35],["katumaton","unrepentant",35],["katuvainen","remorseful",35],["katuvainen","penitent",35],["katuvainen","repentant",35],["kauppias","merchant",0],["kavala","deceitful",35],["kavala","treacherous",35],["Kedronin puro","Brook of Cedron",23],["Keefas","Cephas",8],["kehotus","admonition",35],["kehotus","exhortation",35],["keisari","Caesar",0],["keittiöryhmä","kitchen group",34],["keittiöryhmän jäsen","kitchen worker",34],["keittiövuoro","kitchen duty",34],["kelvata vanhurskaudeksi","be acceptable as righteousness",6],["kelvoton palvelija","unworthy servant",6],["kerjäläinen","beggar",0],["kerskata","boast",35],["kerskata","brag",35],["Kesarea","Caesarea",23],["keskensyntynyt","premature",33],["keskinäinen","mutual",35],["keskustella tiellä ja matkalla","discuss on the way and journey",6],["kieli","string",21],["kielisoitin","string instrument",21],["kihlapantti","seal of betrothal",35],["kiihkeä (yltiöharras)","bigoted",4],["kiihkoilija (intoilija)","zealot",4],["kiirastorstai","Holy Thursday",17],["kiirastorstai","Maundy Thursday",17],["kiista","controversy",4],["kiista","discord",4],["kiista","dispute",4],["kiitoslaulu","song of thanksgiving",21],["kiittäminen","rejoicing",21],["kiivas","violen",35],["kiivaus","zeal",35],["kiivaus Jumalan puoleen","zealousness towards God",6],["kilvoitella","endeavor",35],["kilvoitella","endeavor",35],["kilvoitella synnin poispanijana","endeavour to put/putting sin away",6],["kirjanoppinut","scribe",0],["kirkastaa, miten armonaika kuluu","reveal how the time of grace is passing",6],["Kirkastusvuori","Mount of Transfiguration",23],["kirkkaus","brightness",35],["kirkkaus","brightness",35],["kirkkohallitus","Church Council",17],["kirkkoherra","rector (protestant)",17],["kirkkoherra","senior pastor",17],["kirkkoherra","vicar (katolinen)",17],["kirkkokäsikirja","Church Service Book",17],["kirkkokäsikirja","Book of Sacred Acts",-1],["kirkkolaki","church act",17],["kirkkolakimme ensimmäisessä pykälässä","in the first paragraph of the church law",17],["kirkkomusiikki","church music",21],["kirkkoneuvosto","church board",17],["kirkkovaltuusto","parish council",17],["kirkkovuosi","church calendar",17],["kirkkovuosi","ecclesiastical year",17],["kirkolliset toimitukset","church ceremonies, sacraments and rites",17],["kirkolliskokous","General Synod, Church Parliament",17],["kitara","guitar",21],["kiusaaja","tempter",35],["kiusata","tempt",35],["kiusattu (tulin kiusattuna)","tempted / being tempted",6],["kiusaus","temptation",35],["kiusausten keskellä","in the midst of temptations",6],["kivijalka","stone foundation",1],["koetella","try",35],["koettelemus","trial",35],["kohtuuton","excessive",4],["kohtuuton","intemperate",4],["koi","moth",2],["koiruoho","wormwood",14],["kolehdin kantaja","collector",34],["kolehti","collection",34],["kolikko","farthing",20],["kolmas uskonkappale","third article of the Creed",6],["kolminaisuus","trinity",35],["kolmiyhteinen","triune",35],["Kolmiyhteinen Jumala","Triune God",11],["kompastella","fall",35],["kompastella","stumble",35],["konfirmaatio","confirmation",17],["Korasin","Chorazin",23],["Korintto","Corinth",23],["korinttolaiset","Corinthians",13],["korjata","correct",35],["korjata","mend",35],["korkeakoulupastori","university chaplain",17],["Kornelius","Cornelius",8],["kornetti","cornet",21],["korppi","raven",2],["korppikotka","vulture",2],["korven matka","journey in the wilderness",6],["kouristus","travail",33],["Kreeta","Crete",23],["kreikkalainen","Greek",13],["kristilliset arvot","Christian values",6],["kristinoppi","Christian doctrine",17],["kristinukso","Christianity",36],["kristitty","Christian",27],["Kristuksen sovintotyö","redemption work of Christ",35],["Kristus on kaiken pää.","Christ is above all.",6],["Kruunu tallelle pantuna","crown (that has been) preserved",6],["kuihtua","be consumed",33],["kuiva henki","dry spirit",4],["kuivettua","wither",33],["kuivettunut sydän","heart that has dried / a dried heart",6],["kuivua","dry up",33],["kulkea puutteiden ja kiusausten kanssa","travel troubled and lacking",6],["kulmakivenä itse Jeesus Kristus","Jesus Christ as the cornerstone",6],["kulmakivi","corner stone",1],["kultainen jumala","god of gold",3],["kultaraha","pound",20],["kummi","sponsor",25],["kummi","godparent",25],["kungfutselaisuus","Confucianism",36],["kuninkaallinen pappeus","royal priesthood",6],["kuninkaan neuvonantaja","royal adviser",0],["kunnia","glory",35],["kunnia","honor",35],["Kunnian kuningas","King of Glory",11],["kunnioittaa","glorify",21],["kuolematon","immortal",35],["kuolematon","undying",35],["kuoro","choir",21],["kuparikolikko","mite",20],["kurittaa","chasten",35],["kurittaa","chastise",35],["kurittaa","punish",35],["kuritus","chastisement",35],["kuritus","punishment",35],["kurkihirsi","ridge pole",1],["kutsujan armo","grace of the caller",6],["kutsuvieraat","invited guests",31],["kuuliainen","obedient",35],["Kuuluuko minulle Jumalan armo?","Does Godös grace belong to me?",6],["kuume","fever",33],["kuunnella ja kuulla omalle kohdalleen","listen and hear / receive personally",6],["kuunvaihetautinen","lunatic",33],["kuva","graven image",3],["kylmät tuntemiset","cold feelings",6],["kylvää","sow",19],["kympaalit","cymbals",21],["kyntää","plough",19],["kyntää","plow",19],["Kypros","Cyprus",23],["Kyrene","Cyrene",23],["Kyrenius","Cyrenius",8],["kyttyräselkäinen","crookbacked",33],["kyynärä","cubic",20],["kämmenenleveys","hand breadth",20],["kärsimys","suffering",35],["kärsivällisyys","patience",35],["käsipuoli","maimed",33],["käsittää","comprehend",35],["käsityöläinen","craftsman",0],["käskynhaltija","deputy",0],["kätketty/salattu tältä maailmalta","concealed/hidden from this world",6],["Köyhille saarnataan evankeliumia.","The gospel is preached to the poor.",6],["laakeripuu","bay tree",14],["laidun","pasture",24],["Lain orjuudessa olevia vapautetaan.","Those who are under the bondage of law are set free.",6],["lain orjuus","bondage of the law",4],["lainopettaja","doctor of the law",0],["laintaulut","tablets of the law",32],["laittamaton","blameless",6],["lakihenkinen","law-minded",4],["lakihenkinen","legalistic",4],["lammas","sheep",2],["lammas","sheep",24],["lammashuone","sheepfold",24],["lammaslauma","flock of sheep",24],["lankeemus","fall",4],["lankeemus","falling",4],["lankeemus","fall",35],["lankeemus (rikkomus)","transgression",4],["lantti","farthing",20],["lapsensynnyttäjä","travailing woman",33],["Lapsesi notkistavat sydämensä polvet.","Your children bow their hearts.",6],["Lasarus","Lazarus",8],["laskea sydämelleen","settle in the heart / place unto your heart",6],["lastenohjaaja","church nursery teacher",17],["lato","hay loft",19],["Latsarus","Lazarus",8],["laulaa","sing",21],["laulaja","singer",21],["laulu","song",21],["laulukirja","songbook",21],["laulun sanoma","song's message",21],["laulun sepittäjä","songsmith",21],["lauluntekijä","songwriter",21],["lauluseurat","song services",34],["laupeus","mercy",35],["laupias","gracious",35],["laupias","merciful",35],["laupias samarialainen","good Samaritan",6],["lautaset","cymbals",21],["Leevi","Levi",7],["lehtimajajuhla","feast of tabernacles",10],["lehtori","parish lector",17],["leili","bottle",20],["leipuri","baker",0],["leiri","camp",34],["leiri-isäntä","camp director",34],["leirikeskus","camp",34],["leiriläinen","camper",34],["leirityö","camp work",34],["leiriyhdyshenkilö","camp activity contact person",34],["leiviskä","talent",20],["lepytyshaju","sweet savor unto the Lord",32],["lestadiolaisuus","Laestadian movement",17],["lestadiolaisuus","Laestadianism",17],["Levätköön Herran rauha lunastetuissa!","May the Lordös peace rest within the redeemed!",6],["lihallinen","carnal",35],["lihan jälkeen (Room. 8:1,4)","ñafter the flesh┤",6],["lihan vapaus","freedom of the flesh",4],["liikutukset","rejoicings",29],["liiton arkku","ark of the covenant",32],["liitonarkki","ark of the covenant",32],["liitto","alliance",35],["liitto","covenant",35],["liitto","union",35],["lintel","kamana",1],["liturgi","officiating minister",29],["lohduttaa","console",35],["lohduttaa","comfort",35],["loppiainen","Epiphany",17],["loppuhartaus","closing devotion",29],["loppuhartaus","closing devotion",34],["loppupuhe","closing service",34],["loppurukous","closing prayer",29],["loppurukous","closing prayer",34],["loukkaantua Jumalan sanan julistukseen","offended by the preaching of Godös word",6],["loukkauskivi","rock of offence",35],["loukkauskivi","stumbling-block",35],["lunastaa","redeem",35],["lunastaja","redeemer",35],["lunastus","redemption",35],["Luoja","Creator",11],["luoja","creator",35],["luomakunta","creation",34],["Luonnollinen ihminen ei taida ymmärtää, mikä Jumalan Hengen on","Mortal man cannot understand what is of Godös Spirit / what Godös Spirit creates.",6],["luste","tare",14],["luterilainen kirkko","Lutheran church",36],["Luukkaan Evankeliumi","Gospel of St. Luke",26],["luuttu","lute",21],["lyhde","sheaf",19],["Lyydia","Lydia",8],["lyyra","lyre",21],["lyömäsoitin","percussion instrument",21],["lähettiläs","messenger",0],["lähettää työmiehiä elovainiolle","send the labourers to the fields",6],["lähetysmatka","mission tour",29],["lähetysmatka","mission trip",29],["lähetystyö","missionary work",17],["lähetystyö","mission work",34],["lääke","medicine",33],["lääkäri","physician",33],["lääninrovasti","district dean",17],["Maa on Hänen jalkainsa astinlauta.","The earth is His footstool.",18],["maaherra","governor",8],["maaherra","governor",22],["maailmallinen musiikki","worldly music",21],["maailman hengen tuulet","winds of the worldly spirit",6],["maailman ääriin","into all the world",6],["maaksi pitää sinun jälleen tuleman.","and unto dust you shall return.",6],["maallikkoedustaja","lay representative",17],["maallikkopuhuja","lay speaker",29],["maallinen","secular",21],["maallinen","temporal",35],["maallinen","earthly",35],["maallinen laulu","secular song",21],["Maasta olet sinä tullut,....","From dust you have come...",6],["maja","tabernacle",32],["makedonialainen","Macedonian",8],["Malakia","Malachi",26],["maltillisuus","composure",35],["maltillisuus","moderation",35],["manata","swear",35],["manata","swear",35],["manata","conjure",35],["Maria Magdaleena","Mary Magdalene",8],["Markuksen Evankeliumi","Gospel of St. Mark",26],["Martta","Martha",8],["matkalaulut","songs of the journey",21],["matkapuku","travel garment",6],["Matteuksen Evankeliumi","Gospel of St. Matthew",26],["Matteus","Matthew",8],["meidän edestämme","on our behalf /for our sake",6],["Meillä on hyvä yhteishenki.","We all agree. / We are in agreement.",6],["melodia","melody",21],["melodinen musiikki","melodious music",21],["merenkulkija","seaman",0],["metodismi","Methodism",36],["Miika","Micah",26],["Mikael","Michael",8],["minun armoni ei sinusta väisty","my grace will not be removed nor my",6],["Minun rauhanliittoni ei horju. (Jes. 54:10)","My peace covenant shall not waver.",6],["Minä olen Daavidin juuri ja suku, se kirkas kointähti","I am the root and offspring of David and the bright and morning star",11],["Missä synti on suureksi tullut, siellä armo on ylenpalttiseksi tullut (Room. 5:20)","ñWhere sin abounded, grace did much more abound┤.",6],["monioppisuuden aika","time of many doctrines / pluralism",35],["moonilaiset","Moonies",36],["Moorian maa","Moriah (=the land of Moriah)",23],["Mooses","Moses",8],["mormonit","Mormons",36],["morsian","bride",25],["muistoseurat","commemorative services",29],["musiikin koristeet","ornament of music",21],["muuli","mule",2],["muuri","wall",1],["muusikki","music",21],["mykkä","dumb",33],["myyjäiset","bake and craft sale",34],["mädätä","consume",33],["märkäpaise","boil",33],["mätä","rotten",33],["määräosa","share/portion",6],["Naatan","Nathan",8],["Naeman","Naeman",8],["Nahum","Nahum",26],["nasaretilaiset","Nazarenes",27],["Natanael","Nathanael",8],["nauhaseurat","taped services",34],["Nehemian Kirja","Nehemiah",26],["neuvonantaja","adviser",0],["neuvonpito","consultation",35],["neuvonpito","meeting",35],["niin kuin elon aikana riemuitaan (Jes. 9:3)","as they rejoice during the harvest",6],["niin kuin saaliinjaossa iloitaan","as they rejoice dividing the spoils",6],["Niinive","Nineveh",23],["niittää","cut",19],["niittää","mow",19],["Nikodeemus","Nicodemus",8],["nimi kirjoitettuna elämänkirjassa","your name written in the book of life",6],["noita","magician",0],["Noomi","Naomi",8],["notaari","notary",17],["nuhdella","admonish",4],["nuhdella","rebuke",4],["nuhdella","reprimand",4],["nuhdella","reproach",4],["nuhdella","rebuke",35],["nuhdella","reproach",35],["nuhteeton","irreproachable",35],["nuorisotyö","youth work",34],["nuorisotyön vastuuhenkilö","youth work coordinator",34],["nuorisotyönohjaaja","youth leader",17],["nuorisotyönohjaaja","youth worker",17],["nuortenilta","youth discussion",34],["nuortenpäivät","youth days",34],["nuotit","notes",21],["nuotta","dragnet",12],["nuottipainos","hymnal",21],["näivetystautinen","withered",33],["nöyrtyä","humble",35],["nöyrtyä oikealle paikalle/parannukseen","humble unto the correct state of mind/unto repentance",6],["nöyryys","humility",35],["nöyryyttää","humiliate",35],["Obadja","Obadiah",26],["ohdake","thorn",14],["oikeudenpalvelija","officer",0],["oinas","ram",2],["oinas","ram",24],["Oksennan minä sinut suustani┤ (Ilm. 3:16)","ñI will spue thee out of my mouth.┤",6],["oksentaa","vomit",33],["Ole ahkera ja tee parannus┤ (Ilm. 3:19)","Be obedient and repent/┤Be zealous therefore and repent┤",6],["olki","straw",19],["omaisuuden kansa┤ (1 Piet. 2:9)","Godös own/┤a peculiar people┤",6],["omakohtainen","personal",35],["omalta puoleltaan syntiset ihmiset","we are in ourselves sinful people",6],["oman elämän tilitys","account (of my own life)",6],["omatunto on herännyt","conscience has awakened",6],["omavanhurskaus","self-righteousness",4],["ompeluseurat","home services",34],["opillinen ero","doctrinal difference",4],["opillinen periaate","doctrinal tenet/principle",4],["oppi","doctrine",35],["orastaa","sprout forth",19],["orja","slave",0],["orjantappura","thistle",14],["orjuuden henki","spirit of bondage",35],["orjuus","bondage",35],["orjuus","servitude",35],["orjuus","slavery",35],["orkesteri","orchestra",21],["ortodoksinen kirkko","Orthodox church",36],["osallinen armosta","partaker of grace",6],["osallisuus","participation",35],["osallisuus Pyhästä Hengestä","fellowship of the Holy Spirit",6],["osoittaa rakkauttaan ihmislasta kohtaan","shows his love toward people.",6],["otollinen","acceptable",35],["ottaa vastaan","accept",35],["Ovet katua vastaan suljetaan.","The doors to the street will be closed.",6],["paaduttaa (sydämensä)","harden (oneös heart)",35],["paasto","fast",33],["paatumus","hardness of the heart",35],["paatunut","hardened",35],["paatunut","unrepentant",35],["Paavalin 1. Epistola Korintilaisille","Corinthians I",26],["Paavalin 1. Epistola Tessalonikalaisille","Thessalonians I",26],["Paavalin 1. Epistola Timoteukselle","Timothy I",26],["Paavalin 2. Epistola Korintilaisille","Corinthians II",26],["Paavalin 2. Epistola Tessalonikalaisille","Thessalonians II",26],["Paavalin 2. Epistola Timoteukselle","Timothy II",26],["Paavalin Epistola Ephesiläisille","Ephesians",26],["Paavalin Epistola Galatalaisille","Galatians",26],["Paavalin Epistola Kolossilaisille","Colossians",26],["Paavalin Epistola Philemonille","Philemon",26],["Paavalin Epistola Philippiläsille","Philippians",26],["Paavalin Epistola Roomalaisille","Romans",26],["Paavalin Epistola Titukselle","Titus",26],["paha","wicked",35],["paha","evil",35],["pahentaa","offend",35],["paholainen","devil",35],["pahuuden enkelit","angels of darkness",6],["paimen","shepherd",24],["paimentaa","herd",24],["painaa kosketinta","strike a key",21],["paise","sore",33],["pakana","heathen",13],["pakana (ei juutalainen)","gentile, non-Jew",13],["palkkapaimen","hired shepherd",24],["palmusunnuntai","Palm Sunday",17],["palvelija","servant",0],["palvoa","worship",35],["panettelija","detractor",4],["Papin huulet pitää opin kätkemän, että laki hänen suustansa kysyttäisiin┤ (Mal 2:7)","ñFor the priestös lips should keep knowledge, and they should seek the law at his mouth┤",6],["pappi","minister",17],["pappi","pastor",17],["pappi","reverend",17],["pappi","pastor",34],["pappisedustaja","clergy representative",17],["pappiseriseura","Minister Heresy",4],["pappisvihkimys","ordination",17],["parannuksen armo","grace of repentance",35],["parannus","repentance",35],["parantaa","heal",33],["parantaja","physician",33],["parantaja","healer",0],["parantuminen","healing",33],["parattu","healed",33],["pasuuna","sackbutt",21],["peittää syntialastomuus","cover the nakedness of sin",6],["pelastaa","save",35],["pelastus","salvation",35],["pelastusarmeija","Salvation Army",36],["peltopyy","partridge",2],["penninki","penny",20],["penseä","lukewarm",6],["perheneuvoja","family counsellor",17],["perheneuvonta","family counselling",17],["periä autuus","inherit salvation",6],["pesuallas","laver",32],["pesuastia","laver",32],["pesumalja (Joh. 13:5)","basin",6],["peto","beast",2],["peto","beast",24],["petollinen","deceitful",35],["petollinen","treacherous",35],["petos","betrayal",35],["petos","deception",35],["pettää","betray",35],["pettää","deceive",35],["Pietari","Peter",8],["Pietarin 1. Epistola","Peter I",26],["Pietarin 2. Epistola","Peter II",26],["piha","courtyard",1],["piispa","Bishop (The Right Rev.)",17],["piispainkokous","Bishops' Conference",17],["pikkuesikoiset","Small Firstborn, Amerikassa: ñKirkkokunta┤ (the Apostolic Lutheran Church of America)",4],["Pilatus","Pilate",8],["pilkkaaja","scoffer",4],["pilkkaaja","reviler",3],["pilli","pipe",21],["piston sydämeesi (jos olet saanut p. s.)","If your heart has been touched/if your heart was pricked",6],["pitali","leprosy",33],["pitalinen","lepter",33],["pitkäperjantai","Good Friday",17],["pitää kiinni Raamatun sanasta","keep to the word of the Bible",6],["pitää seuroja","conduct services",29],["pitää tarjolla evankeliumia","offer the gospel",6],["pollarilaisuus","Pollarite heresy, Pollarism (johtohenkilö Johan Pollari)",4],["polttouhrialttari","altar of burnt-offering",32],["polttouhrialttari","copper altar",32],["portinvartija","gatekeeper",24],["porttiholvi","porch",1],["Potifar","Potiphar",8],["pronssiallas","laver",32],["psalmi","psalm",21],["psalmilaulanta","singing of psalms",21],["psalmilaulu","chant",21],["psalttari","psalter",21],["Psalttari","Psalms",26],["puhallinsoitin","brass instrument",21],["puhaltaa torveen","sound the trumpet",21],["puhdistaa pukua","cleanse the garmet",6],["puhdistua","purge",33],["puhdistusvesi","water of separation",33],["puheenjohtaja","chairman",34],["puhuja","speaker, Am. minister (seurakunnan ñpappi┤)",29],["puhujainkokous","speakersö meeting",29],["puhujamatka","speaking trip",29],["puimatanner","threshing floor",1],["pukea ylle se muoto, joka Kristuksella oli","put on the garment/that form which Christ had",6],["punatauti","bloody flux",33],["puolestapuhuja","defender",4],["puolustus","defence",22],["pyhittää","consecrate",21],["Pyhä","Holy One",11],["pyhä","sacred",21],["pyhä","holy",32],["Pyhä Henki","Holy Ghost",11],["pyhä kansa","holy people/holy nation",6],["pyhä savu","frank incense",32],["pyhäin perimisen osallisuus","partakers of the inheritance of the saints",6],["pyhäin yhteys","unity/communion of saints",6],["pyhäinpäivä","All Saint's Day",17],["pyhäkoulu","Sunday school",17],["pyhäkoulu","Sunday school",34],["pyhäkoulunopettaja","Sunday school teacher",34],["Pyhän nimesi kiitokseksi ja kunniaksi ja sielujemme autuudeksi","For the praise and glory of thy holy name and for the salvation of our souls",6],["pyrkii eteen pannun päämäärän jälkeen","strives toward the goal which has been set before us",6],["pyyhkiä pois synnit","wipe away sins/cleanse from sins",6],["päiväkerho","day circle",17],["päiväkerho","Day circle",34],["päiväkerhonohjaaja","Day circle teacher",34],["päivämatka","day's journey",20],["pääemäntä","kitchen head",34],["päällikkö","captain",0],["Päämies","The Prince",11],["pääsihteeri","executive secretary",34],["pääsiäinen","passover",10],["pääsiäispäivä","Easter Sunday",17],["pääskynen","swallow",2],["raadollinen","miserable",35],["raadollinen","wretched",35],["raadollinen ja monelta puolelta häälytetty","wretched and driven by many winds",6],["raajarikko","lame",33],["Raamattu","Bible",17],["raamattuluokanopettaja","Bible class leader",34],["raamattuluokka","Bible class",34],["raamattuluokka","Youth Bible class",34],["raamatullinen oppi","scriptural doctrine, biblical doctrine",4],["raamatullinen ymmärrys","scriptural understanding",4],["raamatunlause","scriptural quote",29],["raastupa","council",22],["raatelija","extortioner",3],["radiohartaus","radio devotion",17],["rahastonhoitaja","treasurer",34],["raittius","soberness",4],["raja menee umpeen","boundary closes/fades",6],["rakkauden vaikutus (Kristuksen r. v.)","effect of the love (of Christ)",6],["rastafarit","Rastafarians/Rastas",36],["Rauhanruhtinas","Prince of peace",11],["rauhanyhdistys","association of peace",34],["rauhaton","restless",35],["rauhaton","troubled",35],["ravitsevat ymmärrystä, ei sielua","(They) nourish rationality/reason, not the soul",6],["reformoitu kirkko","Reformed church",36],["riemuita","rejoice",35],["riemuitseva ja kiittävä seurakunta","rejoicing anf thanking congregation",6],["riemuvuosi","jubilee year",10],["rietas","impure",35],["rietas","indecent",35],["rietas","vile",35],["riita","controversy",4],["riita","discord",4],["riita","dispute",4],["riivattu","vexed with a devil",33],["rikkauteen kiintynyt sydän","heart attracted to riches",6],["rikkoa","transgress",35],["rikkoa","violate",35],["rippi","confession",17],["rippi","confession",35],["rippikoulu","confirmation class",17],["rippikoululeiri","confirmation camp",17],["rippikoululeiri","confirmation camp",34],["ristiinnaulita","crucify",35],["ristiinnaulitseminen","crucifiction",35],["ropo","mite",20],["rovasti","Reverend",17],["rovastikunta","deanery",17],["ruhje","breach",33],["rukoilevaisuus","supplicationism",17],["rukoilla","pray",35],["rukous","prayer",35],["rumpu","drum",21],["runollisuus","poetry",21],["runous","poetry",21],["ruoho","grass",14],["Ruoki taivaan mannalla!","Feed with the manna from heaven!",6],["ruoko","reed",14],["rupinen","scabbed",33],["rutto","pestilence",33],["ruumiillinen heikkous","infirmity of the flesh",33],["Ruut","Ruth",8],["Ruutin Kirja","Ruth",26],["ryhmä","faction",4],["ryhmän vetäjä","group leader",34],["ryöttäsyntinen","wretched sinner",6],["saada kunniaa epäuskoisilta","be honored/praised by unbelievers",6],["saalis","prey",24],["saalis","catch",12],["saalis","draught",12],["saarna","sermon",35],["saarnaaja","preacher",29],["saarnata","preach",35],["saarnaviran kautta Pyhässä Hengessä","in the Holy Spirit through the office of the ministry",6],["saastainen","defiled",35],["saastainen","filthy",35],["saastainen henki","unclean spirit",33],["saastainen vaate jumalan kasvojen edessä","filthy garment before the face of God",6],["saastaisuus","defilement",35],["saastaisuus","filthiness",35],["saatana","satan",35],["saattaa","escort",35],["saattomies","escort",35],["sabatti","Sabbath",10],["sadanpäämies","centurion",8],["saddukeukset","Sadducees",27],["Safiira","Sapphira",8],["sairaalapastori","hospital chaplain",17],["sairaalasielunhoito","hospital chaplaincy",17],["sairas","diseased",33],["saivarrella","split hairs",35],["Sakarja","Zechariah",26],["salata","conceal",35],["salattu maailmalta","concealed from the world",6],["salavuoteinen","adulterer",3],["sallimus","providence",35],["Salomo","Solomon",8],["Salomon Korkia Veisu","The Song of Solomon",26],["Salomon pylväskäytävä","Solomon's porch",23],["Salomon Saarnaaja","Ecclesiastes",26],["Salomon Sananlaskut","Proverbs",26],["samalla rauhan tervehdyksellä","with the same greeting of peace",6],["samarialaiset","Samaritans",13],["Sana sattui.","The word pricked.",6],["sanan lohdutus/lohduttava sana","comforting word",6],["Sarpat","Zarephath",23],["satavuotisseurat","centennial services",29],["Saulus","Saul",8],["sauva","staff",24],["savenvalaja","potter",0],["Savimajan silmä ei kestänyt katsella sitä.","Natural eyes couldnöt bear to see it.",6],["savisydän","carnal mind",6],["savualttari","altar of incense",32],["savualttari","incense altar",32],["Se on hänelle hullutusta.","He finds it to be foolishness.",6],["Sebedeus","Zebedee",8],["seitsenhaarainen kynttilä","golden candlestick",32],["seitsenhaarainen lamppu","golden lampstand",32],["sekeli","shekel",20],["selitys (esim. uskonkappaleen)","explanation",17],["Sergius Paulus","Sergius Paulus",8],["seuraisäntä","service director",34],["seurakunta","church (local)",17],["seurakunta","congregation",17],["seurakunta","parish",17],["seurakunta","congregation",34],["seurakuntailta","congregation discussion evening",34],["seurakuntailta","congregational evening",34],["seurakuntalaulu","congregational singing",29],["seurakuntaneuvosto","congregational board",17],["seurakuntapastori","parish pastor",17],["seurakuntapäivät","congregational days",34],["seuraohjelma","service schedule",34],["seurat","services",34],["seurustelu","courtship",25],["shintolaisuus","Shintoism",36],["Siellä meidän kaikkien on hyvä olla.","We all feel good to be there.",6],["sielu","soul",35],["sielujemme autuudeksi","for the salvation of our souls",6],["sielunhoito","pastoral care",17],["sieluntila","condition of the soul",6],["sielunvihollinen","enemy of the soul",35],["sielunvihollisen piirittämänä","surrounded by the enemy of the soul",6],["siemen","seed",14],["sihteeri","secretary",34],["Siidon","Sidon",23],["Siidon","Zidon",23],["Siimon, kiivailija","Simon Zelotes",8],["siion","Zion",35],["Siionin laulu","song of Zion",21],["Siionin vuori","Mount Sion",23],["sika","hog",2],["sika","swine",2],["silmävoide","eye salve",33],["Simon kyreneläinen","Simon of Cyrene",8],["Simon Pietari","Simon Peter",8],["sinapin siemen","mustard seed",14],["sinapin siemen","mustard seed",15],["Sinulle käy hyvin.","You will fare well.",6],["sirppi","sickle",19],["sisusvaiva","bowel disease",33],["sisäänkäynti","entrance",1],["sitoa","bind",35],["sitoa","retain",35],["sitra","zither",21],["siunata","bless",35],["siunaus","blessing",35],["siunauspyyntö","request for a blessing",6],["siveellinen","chaste",35],["siveellinen","moral",35],["siveetön","indecent",35],["siveetön","unchaste",35],["siveetön","immoral",35],["siveys","chastity",35],["siveä","chaste",35],["siveä","decent",35],["siveä","modest",35],["Sodoma ja Gomorra","Sodom and Gomorrha",23],["soitinyhtye","band",21],["soittaa","play",21],["soittaja","player",21],["soittimet","instruments",21],["soitto","playing",21],["sokea","blind",33],["sotapäällikkö","captain",30],["sotilaspappi","military chaplain",17],["sovelias","acceptable",35],["sovelias","suitable",35],["sovinto","reconciliation",4],["sovinto","reconciliation",35],["sovintoveri","blood of atonement",35],["sovittaa","atone",35],["sovittaa","reconcile",35],["sovittelu","reconciliation",4],["sovitus","atonement",35],["sovituspäivä","day of atonement",10],["SRK:n johtokunnan puolesta","on behalf of the SRK board",31],["SRK:n tervehdys","SRK greeting/the greetings of the SRK",31],["Stefanus","Stephen",8],["stoalaiset","Stoics",28],["suitsevainen kynttilä","flickering candle",6],["suitsutus","incense",32],["suitsutusalttari","altar of incense",32],["suitsutusalttari","incense altar",32],["suitsutusastia","censer",32],["sulhanen","bridegroom",25],["suloinen laulu","sweet song",21],["suntio","church custodian",17],["suojata","shield",35],["suojata, suojella","protect",35],["Suora katu","Straight / street which is called Straight",5],["suru","affliction",35],["suru","sorrow",35],["suuret kirkot","big churches",36],["sydämellämme tunnemme","feel in our hearts",6],["sydämen sokkeloihin","into the depths of the heart",6],["sydämentila","condition of heart",6],["Sykar","Sychar",23],["syli","fathom",20],["symbaali","dulcimer",21],["synniksi meidän edestämme","be sin on our behalf",6],["synnin petoksen kautta","through the cheat of sin",6],["synnin syöverit","depths of sin",6],["synninhätä","distress over sin",35],["synninpäästö","absolution",35],["synnit anteeksi ja rauha Jumalan kanssa","sins forgiven and peace with God",6],["synnyttäminen","childbearing",33],["synnyttää","bring forth children",33],["synnytyskivut","labour",33],["synti","sin",35],["Synti on tullut luvalliseksi..","Sin has become permissible.",6],["syntien anteeksiantamus","remission of sins",35],["syntien anteeksiantamus","forgiveness",35],["syntiinlankeemus","fall",35],["syntitaakka","burden of sin",35],["Syrakuusa","Syracuse",23],["syyttäjä","prosecutor",22],["säe","phrase",21],["säe","verse",21],["säestys","(musical) accompaniment",29],["säestäjä","organist",34],["säkeistö","verse",21],["säkkipilli","bagpipe",21],["sävellys","musical composition",21],["sävelmä","tune",21],["sävyisä","meek",35],["säädyllinen","becoming",35],["säädyllinen","decent",35],["säädyllinen","mannerly",35],["tahra","blemish",35],["tahrata","defile",35],["taidon jälkeen (taitavasti)","skillfully",6],["taipua","bend",35],["taipumaton","unbending",35],["taipumaton","unyielding",35],["taipuvainen","inclined",35],["taipuvainen","prone",35],["taivaallinen","heavenly",35],["taivaan tavara","heavenly trasure",6],["taivaassa tallella suuri palkka","great reward preserved in heaven",6],["taivas","heaven",35],["Taivas ja maa katoavat, mutta","ñHeaven and earth will fade away but",6],["taivuttaa","persuade",35],["talentti","talent",20],["talkootyö","volunteer work",34],["tallettaa taivastiellä/säilyttää taivaan tiellä","remain on heavenös way",6],["tamburiini","tambourine",21],["tamburiini","tambret",21],["tamburiini","timbrel",21],["tanssia","dance",21],["taolaisuus","Taoism",36],["tapaninpäivä","St. Stephen's Day",17],["tehdä matkaa kaksiosaisena","journey carrying two portions",6],["tehdä parannus","repent",35],["tehdä syntiä taivasta ja maata vastaan","sin against heaven and earth",6],["tekopyhä","hypocrite",35],["tekopyhä","sanctimonious",35],["teksti","text",21],["temppelimusiikki","temple songs",21],["temppelipalvelija","Levite",0],["temppelivero","tribute money",20],["terveellinen oppi","sound/wholesome doctrine",4],["terveellinen oppi","sound doctrine",35],["tervehdin seuraväkeä","I greet the service guests",31],["terveys","soundness",33],["tiedottajaväki","media",31],["tietäjä","wise man",0],["tilinteko","reckoning",35],["tiuku","small bell",21],["todistaa","testify",35],["todistaa","bear witness",22],["todistaja","witness",35],["todistaja","witness",22],["todistus","testimonial",35],["toimitusneuvosto","publications committee",34],["toinen joulupäivä","St. Stephen's Day",17],["toinen pääsiäispäivä","Easter Monday",17],["toisinajattelija","dissident",4],["tomumaja","house of clay",35],["torvi","horn",21],["tosi uskovainen","true Christian/sincere believer",6],["tottelematon","disobedient",35],["totuuden patsas ja perustus","foundation and pillar of truth",6],["trubaduuri","minstrel",21],["trumpetti","trumpet",21],["tuhlaajalapsi","prodigal child",35],["tuhlaajapojan tieltä / tuhlaajapojan retkiltä","from the way/journey of the Prodigal Son",16],["tukahduttaa","choke",19],["tukahduttaa","suffocate",19],["tuleminen yhdeksi lihaksi","they shall be one flesh",6],["tumella","corrupt",35],["tunne ainoastaan, että olet rikkonut","only feel that you have trespassed",6],["tunnemme oman turmeluksemme","we know we are corrupt",6],["tunnollinen","conscientious",35],["tunnustaa","confess",35],["tunnustuskirjat","Confessions of the Church",17],["tunnustähdet","signs",6],["tuntemiset","feelings",6],["Tuomarein Kirja","Judges",26],["Tuomas","Thomas",8],["tuomio","judgement",35],["tuomio","judgement",22],["tuomiokapituli","diocesan chapter",17],["tuomiokapituli","diocesan office",17],["tuomiokirkko","cathedral",21],["tuomiopäivä","Judgement Day",35],["tuomiorovasti","cathedral dean (The Very Rev.)",17],["tuomita","judge",35],["tuomita","judge",22],["turmella","defile",35],["turmella","pervent",35],["turmella","spoil",35],["turmeltunut","corrupted",35],["turmelus","corruption",35],["turvapaikka","haven",35],["turvapaikka","refuge",35],["turvapaikka","sanctuary",35],["tutkain","prick",19],["tynnyri","measure",20],["Tyyro","Tyre",23],["työhön kutsuttu","called to work",6],["työsarka","job/work/portion",6],["tähkä","ear of corn",19],["tähkä","head the grain",19],["uhrileipäpöytä","table of show-bread",32],["ulkokultainen","hypocrite",35],["ulkopiha","outer court",1],["upseeri","officer",0],["urut","organ",21],["usko","belief",35],["usko","faith",35],["uskoa","believe",35],["uskoa sanansa opetuslapsilleen","entrust his words to his disciples",6],["uskollinen","faithful",35],["uskon askelissa","in the footsteps of faith",6],["uskon kautta omistettavissa","owned by faith",6],["uskonkappale","articles of faith",17],["uskonnonopetus","religious education",17],["uskontunnustus","Creed",17],["uskoon autetut","helped into faith",6],["uskovainen","believer",35],["Ussia","Uzziah",8],["uudenvuodenpäivä","New Year's Day",17],["uudestisyntyä","receive new birth",35],["uupua ja väsyä","get weary and tired",6],["Uuria heettiläinen","Uriah the Hittite",8],["uusheränneet","New Awakenists",4],["uusheräys","New Awakening movement",4],["uususkonnot","New Age Movement",36],["vaaksa","span",20],["vaellus","journey",35],["vaellus","walk",35],["vaeltaa","travel",35],["vaeltaa hengen jälkeen (Rom.8)","walk after the spirit",6],["vahinko","damage",35],["vahinko","harm",35],["vahvistaa","strengthen",35],["vainota","persecute",35],["vaiva","trouble",35],["vajavaisuus","imperfection",35],["vajavaisuus","inadequacy",35],["vakaumus","conviction",35],["vakka","measure",20],["valaista","enlighten",35],["valettu vasikka","molten calf",3],["valittaa","lament",35],["valittu suku","chosen generation",6],["Valkeuden Isä","Father of light",11],["valkeus","light",35],["valtionkirkon pappi","ordained minister",29],["valvoa","watch",35],["valvomattomuus","unwatchfulness",4],["valvominen","watching in faith",4],["valvova","watchful",35],["vanha osa","old portion",6],["vanha osa","old portion",35],["vanhin","elder",0],["vanhoillislestadialaisuus","Conservative Lestadianism",4],["vanhoillislestadiolaisuus","Conservative Laestadianism",9],["vanhurskaaksi ilman lain tekoja","righteous without the words of the law",6],["Vanhurskas","Just",11],["vanhurskas","righteous",35],["vanhurskaus","righteousness",35],["vanhurskaus, joka Jumalan edessä kelpaa","righteousness which is accepted before God",6],["vanhurskaus, joka uskolla omistetaan","righteousness that is owned by faith",6],["vanhurskauttaa (Jla) syntisen/jumalattoman","God justifies a sinner/ an ungodly person",6],["vanki","prisoner",22],["vankilapappi","prison chaplain",17],["vapaakirkot","free churches",36],["Vapahtaja","Saviour",11],["vapahtaja","redeemer",35],["vapahtaja","savior",35],["varhaiskantaiset uskonnot","primitive religions",36],["varjeleva käsi","protecting hand",6],["varjella","keep",35],["varjella","protect",35],["varpunen","sparrow",2],["vartiopaikka","guard pos",35],["vaskiallas","laver",32],["vaskikäärme","brazen serpent",3],["vastaavuus","similarity",6],["vastahakoinen","reluctant",35],["vastustaja","adversary",35],["vastustaja","opponen",35],["vehnä","wheat",14],["veisata kiitosta","sing one's praise",21],["velho","sorcerer",3],["verenjuoksu","issue of blood",33],["verkko","net",12],["veronkantaja","publican",0],["vertaukset hyvästä siemenestä ja ohdakkeista","parables of a good seed and thorns",16],["vertaus itsestään kasvavasta viljasta","parable of grain that grows by its own",16],["vesitautinen","dropsy",33],["vetopasuuna","trombone",21],["viat","trespasses",4],["viaton","innocent",35],["viekas","crafty",35],["viekas","sly",35],["vieraileva puhuja","guest speaker",29],["vieraileva puhuja","visiting speaker",34],["viheliäinen","miserable",35],["viheliäinen","wretched",35],["vihneet","awn",19],["viides herätysliike","Fifth Revivalist movement",17],["viikate","scythe",19],["viikunapuu","fig tree",14],["viikunapuun lehti","branch of fig tree",14],["viimeisetkin epäilykset ja kiusaukset","all doubts and temptations",6],["viinikuurna","wine press",19],["vika","fault",4],["vika","shortcoming",4],["vilja-aitta","granary",19],["vilpillinen","deceitful",35],["vilpillinen","sincere",35],["vilpitön","sincere",35],["vilppi","guile",35],["vioilla ja virheillä peitetty","covered with faults and errors",6],["virsi","hymn",21],["virsikirja","Hymn book",17],["virsta","mile",20],["virvoittaa","refresh",35],["virvoittaa","revive",35],["virvoittaa sydäntä","refresh the heart",6],["vitsaus","plague",33],["vohla","kid",2],["voide","ointment",33],["voidella","anoint",35],["voidella","anoint",33],["voitelu","unction",33],["voiteluöljy","anointing oil",33],["voitonlaulu","song of triumph",21],["voittaa","overcome",35],["voittaa","win",35],["voitto","victory",35],["vuodattaa","shed",35],["vuodattaa henkensä (Jla v. h.)","God gives the Holy Spirit",6],["vuohi","goat",2],["vuorotervehdys","responsory",21],["vuosikokous","yearly meeting",34],["vyötetty kultaisella rakkauden vyöllä","girded with love",6],["Väkevä Jumala","Mighty God",11],["vääryys","injustice",35],["väärä","false",35],["väärä","incorrect",35],["väärä","wrong",35],["väärä","unrighteous",3],["väärä henki","false spirit",4],["väärä oppi","false doctrine",4],["yhdymme kiitokseen ja rukoukseen","we unite in thanksgiving and prayers",6],["yhteinen","mutual",35],["yhteinen rakkaus","mutual love",4],["yhtenäinen henki","spirit of unity",4],["yhtenäisyys","unity",4],["yhteys","fellowship",4],["yhteys","fellowship",35],["Yhtä minä anon, sitä minä pyydän, asuakseni Herran huonessa kaiken elinaikani","One thing have I desired that will I seek after; that I may dwell in the house of the Lord all the days of my life",18],["yksi pyhä ja yhteinen seurakunta","one holy and mutual congregation",6],["yksimielinen","likeminded",6],["yksimielisyys","unity",35],["yksin armosta, yksin uskosta","only by grace, only by faith",6],["yksinkertainen taivaan evankeliumi","simple heavenly gospel",6],["yleinen saarna","general sermon",6],["ylenantaa yhteisen kotinsa","reject mutual home",6],["ylenkatse","dishonor",35],["ylenpalttinen armo","boundless grace",6],["ylentää","exalt",35],["ylentää","uplift",35],["ylihengellinen","overly spiritual",4],["ylimmäinen pappi","high priest",0],["ylipappi","chief priest",0],["ylistyslaulu","song of praise",21],["ylistäen","rejoicing",21],["ylistää","extol",35],["ylistää","glorify",35],["ylistää","praise",35],["ylistää Jumalaa","praise God",6],["ylitsekäyminen","transgression",35],["ylösnousemus","resurrection",35],["ymmärtämätön","foolish, ignorant",6],["ympärileikata","circumcise",33],["ympärileikkaus","circumcision",33],["yrtti","herb",14],["Zephanja","Zephaniah",26],["öljy","oil",33],["öljypuu","olive tree",14],["öljypuun lehti","olive tree branch",14]],"difficulties":{"beginner":{"label":"Beginner","sec_per_pair":8.0},"intermediate":{"label":"Intermediate","sec_per_pair":3.6},"expert":{"label":"Expert","sec_per_pair":1.8}}};</script>
+<script>
+(()=>{
+  const $=(id)=>document.getElementById(id);
+  const toastEl=$('toast');
+  const overlayEl=$('overlay');
+  const overlayText=$('overlayText');
+  const views={setup:$('viewSetup'),game:$('viewGame'),results:$('viewResults')};
+  const showView=(name)=>{Object.values(views).forEach(v=>v.classList.remove('active'));views[name].classList.add('active');};
+  const toast=(msg)=>{toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1600);};
+
+  const payload=window.VOCAB_PAYLOAD;
+  const categories=payload.categories;
+  const diffs=payload.difficulties;
+
+  const items=payload.data.map(d=>({fi:d[0],en:d[1],catIdx:d[2]}));
+  const catToIdx=new Map(categories.map((c,i)=>[c,i]));
+
+  const settings={category:'__all__',contentMode:'single',pairsChoice:'5',sound:true,haptics:true,difficulty:'intermediate',fontScale:1.0};
+  const session={active:false,paused:false,settingsKey:'',deck:[],pos:0,rounds:0,points:0};
+  const round={k:5,startTs:null,timer:null,matched:0,mistakes:0,lock:false,selected:null,cardsL:[],cardsR:[],mapByCardId:new Map(),domByCardId:new Map()};
+
+  overlayEl.addEventListener('click',()=>overlayEl.classList.remove('show'));
+
+  const selCat=$('selCategory');
+  (function fillCategories(){
+    selCat.innerHTML='';
+    const a=document.createElement('option');a.value='__all__';a.textContent='All categories';selCat.appendChild(a);
+    categories.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;selCat.appendChild(o);});
+  })();
+
+  const setSeg=(id,val)=>{const el=$(id);[...el.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.value===val));};
+  const bindSeg=(id,cb)=>{const el=$(id);el.addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b)return;[...el.querySelectorAll('button')].forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset.value);});};
+
+  function updateDiffNote(){const d=diffs[settings.difficulty];$('diffNote').textContent=`${d.label}: ${d.sec_per_pair.toFixed(1)}s per pair`;}
+
+  bindSeg('segDifficulty',v=>{settings.difficulty=v;updateDiffNote();});
+  bindSeg('segContent',v=>{settings.contentMode=v;document.body.classList.toggle('mode-single',v==='single');document.body.classList.toggle('mode-all',v!=='single');onSettingsChanged(true);});
+  bindSeg('segSound',v=>{settings.sound=(v==='on');});
+  bindSeg('segHaptics',v=>{settings.haptics=(v==='on');});
+
+  selCat.addEventListener('change',e=>{settings.category=e.target.value;onSettingsChanged(true);});
+
+  const rngText=$('rngText');
+  const txtVal=$('txtVal');
+  function applyFontScale(){document.documentElement.style.setProperty('--fontScale',String(settings.fontScale));txtVal.textContent=Math.round(settings.fontScale*100)+'%';}
+  rngText.addEventListener('input',(e)=>{settings.fontScale=parseInt(e.target.value,10)/100;applyFontScale();});
+
+  const deckKey=()=>JSON.stringify({category:settings.category,contentMode:settings.contentMode});
+
+  function onSettingsChanged(affectsSession){
+    updateSetupStats();
+    if(!affectsSession)return;
+    if(session.active){$('setupNote').textContent='Options changed. Starting a round will reset the current session deck.';$('btnContinue').disabled=true;}
+    else{$('setupNote').textContent='Changing category/content/pair settings will reset the current session deck.';}
+  }
+
+  let audioCtx=null;
+  function ensureAudio(){if(audioCtx)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch{audioCtx=null;}}
+  function ding(){if(!settings.sound)return;ensureAudio();if(!audioCtx)return;if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+    const t0=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(880,t0);o.frequency.exponentialRampToValueAtTime(1320,t0+0.08);
+    g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.22,t0+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t0+0.16);
+    o.connect(g);g.connect(audioCtx.destination);o.start(t0);o.stop(t0+0.18);
+  }
+  function buzz(){if(!settings.haptics)return;if(navigator.vibrate)navigator.vibrate(25);}
+
+  function eligible(){
+    const out=[];
+    const selectedIdx=settings.category==='__all__'?null:catToIdx.get(settings.category);
+    for(let i=0;i<items.length;i++){
+      const it=items[i];
+      if(selectedIdx!==null&&it.catIdx!==selectedIdx)continue;
+      if(settings.contentMode==='single'&&it.fi.includes(' '))continue;
+      out.push(i);
+    }
+    return out;
+  }
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+  function startNewSession(resetPoints){
+    const deck=shuffle(eligible());
+    session.active=true;session.paused=false;session.settingsKey=deckKey();session.deck=deck;session.pos=0;session.rounds=0;if(resetPoints)session.points=0;
+    updateSetupStats();
+  }
+  function canContinue(){return session.active&&session.paused&&session.settingsKey===deckKey();}
+  function updateSetupStats(){
+    const remain=session.active?(session.deck.length-session.pos):0;
+    $('stRemain').textContent=session.active?String(remain):'—';
+    $('stRounds').textContent=String(session.rounds||0);
+    $('stPoints').textContent=String(session.points||0);
+    $('btnContinue').disabled=!canContinue();
+    $('btnReset').disabled=!session.active;
+  }
+
+  $('btnStart').addEventListener('click',()=>{startNewSession(true);startRound();});
+  $('btnContinue').addEventListener('click',()=>{session.paused=false;startRound();});
+  $('btnReset').addEventListener('click',()=>{startNewSession(true);toast('Session reset');updateSetupStats();});
+
+  function pauseToSetup(){if(session.active)session.paused=true;showView('setup');updateSetupStats();}
+  $('btnBackSetup').addEventListener('click',pauseToSetup);
+  $('btnResultsSetup').addEventListener('click',pauseToSetup);
+
+  const formatTime=(sec)=>{const m=Math.floor(sec/60);const s=Math.floor(sec%60);return `${m}:${String(s).padStart(2,'0')}`;};
+  function computeLayout(){const h=window.innerHeight||700;document.documentElement.style.setProperty('--cardFont',(h<640?11:12)+'px');}
+
+  let lastTapT=0,lastTapId='';
+  function maybeShowOverlay(cardId,text){
+    const now=performance.now(),dt=now-lastTapT;
+    if(dt<320&&lastTapId===cardId){overlayText.textContent=text;overlayEl.classList.add('show');lastTapT=0;lastTapId='';return true;}
+    lastTapT=now;lastTapId=cardId;return false;
+  }
+
+  const gridL=$('gridLeft'),gridR=$('gridRight');
+  function snap(container){const m=new Map();container.querySelectorAll('.card').forEach(el=>m.set(el.dataset.cardId,el.getBoundingClientRect()));return m;}
+  function flip(prev,container){
+    const now=new Map();container.querySelectorAll('.card').forEach(el=>now.set(el.dataset.cardId,el.getBoundingClientRect()));
+    container.querySelectorAll('.card').forEach(el=>{
+      const id=el.dataset.cardId,p=prev.get(id),n=now.get(id);if(!p||!n)return;const dx=p.left-n.left,dy=p.top-n.top;if(!dx&&!dy)return;
+      el.style.transform=`translate(${dx}px,${dy}px)`;el.style.transition='transform 0s';requestAnimationFrame(()=>{el.style.transition='transform .20s ease';el.style.transform='';});
+    });
+  }
+
+  function renderSide(container,cards,side){
+    container.innerHTML='';
+    cards.forEach(c=>{
+      const el=document.createElement('div');el.className='card';el.dataset.cardId=c.cardId;el.dataset.side=side;
+      el.innerHTML='<div class="t"></div>';el.querySelector('.t').textContent=c.text;
+      el.addEventListener('click',()=>onTap(el));
+      el.addEventListener('pointerup',(ev)=>{
+        if(ev.pointerType==='mouse'&&ev.detail>=2){overlayText.textContent=c.text;overlayEl.classList.add('show');return;}
+        maybeShowOverlay(c.cardId,c.text);
+      });
+      round.domByCardId.set(c.cardId,el);container.appendChild(el);
+    });
+  }
+
+  function startTimer(){stopTimer();round.startTs=performance.now();$('hudTime').textContent='0:00';round.timer=setInterval(()=>{$('hudTime').textContent=formatTime((performance.now()-round.startTs)/1000);},200);}
+  function stopTimer(){if(round.timer){clearInterval(round.timer);round.timer=null;}}
+
+  function startRound(){
+    if(session.active&&session.settingsKey!==deckKey()){startNewSession(false);toast('Options changed → session reset');}
+    if(!session.active)startNewSession(true);
+
+    const remain=session.deck.length-session.pos;
+    if(remain<=0){showResults({sessionComplete:true});return;}
+
+    const k=Math.min(5,remain);
+    round.k=k;
+    $('hudTarget').textContent=String(k);
+    $('hudMatched').textContent='0';
+    $('hudMistakes').textContent='0';
+    computeLayout();
+
+    const pairIdxs=session.deck.slice(session.pos,session.pos+k);
+    session.pos+=k;
+
+    const left=[],right=[];
+    round.mapByCardId=new Map();round.domByCardId=new Map();
+
+    pairIdxs.forEach((pairIndex,p)=>{
+      const it=items[pairIndex];
+      const key='p'+session.rounds+'_'+p+'_'+pairIndex;
+      const fiId=key+'_fi',enId=key+'_en';
+      left.push({cardId:fiId,text:it.fi});
+      right.push({cardId:enId,text:it.en});
+      round.mapByCardId.set(fiId,pairIndex);
+      round.mapByCardId.set(enId,pairIndex);
+    });
+
+    shuffle(left);shuffle(right);
+    round.cardsL=left;round.cardsR=right;
+    round.matched=0;round.mistakes=0;round.selected=null;round.lock=false;
+
+    showView('game');
+    renderSide(gridL,left,'L');
+    renderSide(gridR,right,'R');
+    startTimer();
+
+    session.rounds+=1;
+    updateSetupStats();
+  }
+
+  function clearSelection(){
+    if(!round.selected)return;
+    const el=round.domByCardId.get(round.selected.id);
+    if(el)el.classList.remove('selected');
+    round.selected=null;
+  }
+
+  function onTap(el){
+    if(round.lock)return;
+    const id=el.dataset.cardId,side=el.dataset.side;
+    ensureAudio();
+    if(overlayEl.classList.contains('show'))return;
+
+    if(!round.selected){round.selected={side,id};el.classList.add('selected');return;}
+    if(round.selected.side===side){
+      const prev=round.domByCardId.get(round.selected.id);if(prev)prev.classList.remove('selected');
+      round.selected={side,id};el.classList.add('selected');return;
+    }
+
+    const aId=round.selected.id,bId=id;
+    const aEl=round.domByCardId.get(aId),bEl=el;
+    const pa=round.mapByCardId.get(aId),pb=round.mapByCardId.get(bId);
+    clearSelection();
+    if(pa===pb)correct(aEl,bEl,aId,bId);else incorrect(aEl,bEl);
+  }
+
+  function correct(aEl,bEl,aId,bId){
+    round.lock=true;
+    if(aEl)aEl.classList.add('good');
+    if(bEl)bEl.classList.add('good');
+    ding();
+    setTimeout(()=>{
+      const prevL=snap(gridL),prevR=snap(gridR);
+      if(aEl)aEl.classList.add('removing');
+      if(bEl)bEl.classList.add('removing');
+      setTimeout(()=>{
+        round.cardsL=round.cardsL.filter(c=>c.cardId!==aId&&c.cardId!==bId);
+        round.cardsR=round.cardsR.filter(c=>c.cardId!==aId&&c.cardId!==bId);
+        renderSide(gridL,round.cardsL,'L');
+        renderSide(gridR,round.cardsR,'R');
+        flip(prevL,gridL);flip(prevR,gridR);
+        round.matched+=1;$('hudMatched').textContent=String(round.matched);
+        round.lock=false;
+        if(round.matched>=round.k)finishRound();
+      },180);
+    },250);
+  }
+
+  function incorrect(aEl,bEl){
+    round.lock=true;
+    round.mistakes+=1;$('hudMistakes').textContent=String(round.mistakes);
+    if(aEl)aEl.classList.add('bad');
+    if(bEl)bEl.classList.add('bad');
+    buzz();
+    setTimeout(()=>{if(aEl)aEl.classList.remove('bad');if(bEl)bEl.classList.remove('bad');round.lock=false;},450);
+  }
+
+  function clamp(min,max,v){return Math.max(min,Math.min(max,v));}
+
+  function finishRound(){
+    stopTimer();
+    const timeUsed=(performance.now()-round.startTs)/1000;
+    const matches=round.k,mistakes=round.mistakes,attempts=matches+mistakes;
+    const acc=attempts>0?(matches/attempts):1;
+    const secPerPair=diffs[settings.difficulty].sec_per_pair;
+    const target=secPerPair*matches;
+    const base=100*(matches/8);
+    const accFactor=Math.max(0.5,1-mistakes*0.05);
+    const timeFactor=clamp(0.6,1.4,target/Math.max(0.2,timeUsed));
+    const pts=Math.max(0,Math.round(base*accFactor*timeFactor));
+    session.points+=pts;
+    showResults({sessionComplete:(session.deck.length-session.pos)<=0,matches,mistakes,acc,timeUsed,target,pts,ptsTotal:session.points});
+  }
+
+  function showResults(r){
+    showView('results');
+    if(r.sessionComplete&&!('matches'in r)){
+      $('resTitle').textContent='Session complete';
+      $('resAccuracy').textContent='—';
+      $('resDetails').textContent=`Total rounds: ${session.rounds} • Total points: ${session.points}`;
+      $('resTime').textContent='—';$('resTarget').textContent='—';$('resPts').textContent='—';$('resPtsTotal').textContent=String(session.points);
+      $('btnNextRound').textContent='Restart session';
+      $('btnNextRound').onclick=()=>{startNewSession(true);$('btnNextRound').onclick=null;$('btnNextRound').textContent='Next round';startRound();};
+      return;
+    }
+    const accPct=Math.round(r.acc*100);
+    $('resTitle').textContent=r.sessionComplete?'Round results (last round)':'Round results';
+    $('resAccuracy').textContent=`${accPct}%`;
+    $('resDetails').textContent=`Pairs: ${r.matches} • Mistakes: ${r.mistakes} • Difficulty: ${diffs[settings.difficulty].label}`;
+    $('resTime').textContent=formatTime(r.timeUsed);
+    $('resTarget').textContent=formatTime(r.target);
+    $('resPts').textContent=String(r.pts);
+    $('resPtsTotal').textContent=String(r.ptsTotal);
+
+    $('btnNextRound').onclick=null;
+    $('btnNextRound').textContent=r.sessionComplete?'Session summary':'Next round';
+    $('btnNextRound').onclick=r.sessionComplete?(()=>showResults({sessionComplete:true})):(()=>startRound());
+    updateSetupStats();
+  }
+
+  $('btnNextRound').addEventListener('click',()=>{if(!session.active){showView('setup');return;}startRound();});
+
+  function init(){
+    selCat.value='__all__';settings.category='__all__';
+    setSeg('segDifficulty','intermediate');settings.difficulty='intermediate';updateDiffNote();
+    setSeg('segContent','single');settings.contentMode='single';document.body.classList.add('mode-single');
+    setSeg('segSound','on');settings.sound=true;
+    setSeg('segHaptics','on');settings.haptics=true;
+    rngText.value='100';settings.fontScale=1.0;applyFontScale();
+    updateSetupStats();
+  }
+
+  window.addEventListener('resize',()=>{if(views.game.classList.contains('active'))computeLayout();});
+  init();
+  toast(`Loaded ${payload.count} pairs`);
+})();
+</script>
+</body>
+</html>
